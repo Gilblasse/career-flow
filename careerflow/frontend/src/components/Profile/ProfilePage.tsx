@@ -13,7 +13,11 @@ const ProfilePage: React.FC = () => {
         phone: '+49 123 456 789',
         website: 'www.hermanj.design',
         bio: 'Passionate UI designer with over 5 years of experience in creating intuitive and visually appealing digital experiences.',
-        avatar: 'https://i.pravatar.cc/300?img=11'
+        avatar: 'https://i.pravatar.cc/300?img=11',
+        gender: '',
+        veteranStatus: '',
+        disabilityStatus: '',
+        ethnicity: ''
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -217,6 +221,87 @@ const ProfilePage: React.FC = () => {
                     </div>
 
                 </div>
+
+                <div style={{ margin: '32px 0 24px 0', height: '1px', backgroundColor: '#E5E7EB' }} />
+
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', marginBottom: '24px' }}>Voluntary Self-Identification</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                    {/* Gender */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Gender</label>
+                        <select
+                            name="gender"
+                            value={user.gender}
+                            onChange={(e) => handleChange(e as any)}
+                            style={{ padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', outline: 'none', backgroundColor: 'white' }}
+                        >
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Non-binary">Non-binary</option>
+                            <option value="Decline">Decline to Self-Identify</option>
+                        </select>
+                    </div>
+
+                    {/* Veteran */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Veteran Status</label>
+                        <select
+                            name="veteranStatus"
+                            value={user.veteranStatus}
+                            onChange={(e) => handleChange(e as any)}
+                            style={{ padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', outline: 'none', backgroundColor: 'white' }}
+                        >
+                            <option value="">Select Status</option>
+                            <option value="I am a veteran">I am a veteran</option>
+                            <option value="I am not a veteran">I am not a veteran</option>
+                            <option value="Decline">Decline to Self-Identify</option>
+                        </select>
+                    </div>
+
+                    {/* Disability */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Disability Status</label>
+                        <select
+                            name="disabilityStatus"
+                            value={user.disabilityStatus}
+                            onChange={(e) => handleChange(e as any)}
+                            style={{ padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', outline: 'none', backgroundColor: 'white' }}
+                        >
+                            <option value="">Select Status</option>
+                            <option value="Yes, I have a disability">Yes, I have a disability</option>
+                            <option value="No, I do not have a disability">No, I do not have a disability</option>
+                            <option value="Decline">Decline to Self-Identify</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style={{ margin: '32px 0 24px 0', height: '1px', backgroundColor: '#E5E7EB' }} />
+
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', marginBottom: '24px' }}>Race & Ethnicity Questionnaire</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+                    {/* Ethnicity */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Race / Ethnicity</label>
+                        <select
+                            name="ethnicity"
+                            value={user.ethnicity}
+                            onChange={(e) => handleChange(e as any)}
+                            style={{ padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', outline: 'none', backgroundColor: 'white' }}
+                        >
+                            <option value="">Select Ethnicity</option>
+                            <option value="Hispanic or Latino">Hispanic or Latino</option>
+                            <option value="White">White (Not Hispanic or Latino)</option>
+                            <option value="Black or African American">Black or African American (Not Hispanic or Latino)</option>
+                            <option value="Native Hawaiian or Other Pacific Islander">Native Hawaiian or Other Pacific Islander (Not Hispanic or Latino)</option>
+                            <option value="Asian">Asian (Not Hispanic or Latino)</option>
+                            <option value="American Indian or Alaska Native">American Indian or Alaska Native (Not Hispanic or Latino)</option>
+                            <option value="Two or More Races">Two or More Races (Not Hispanic or Latino)</option>
+                            <option value="Decline">Decline to Self-Identify</option>
+                        </select>
+                    </div>
+                </div>
+
             </form>
         </div>
     );

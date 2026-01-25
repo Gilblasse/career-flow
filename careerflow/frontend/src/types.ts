@@ -1,23 +1,3 @@
-export type ATSProvider = 'greenhouse' | 'lever' | 'ashby';
-
-export interface RawJob {
-    company: string;
-    title: string;
-    atsProvider: ATSProvider;
-    atsJobId: string;
-    jobUrl: string;
-    location?: string;
-    isRemote: boolean;
-    description: string;
-    postedAt?: Date;
-}
-
-export interface Job extends RawJob {
-    id: number;
-    createdAt: Date;
-    status: 'pending' | 'analyzed' | 'applied' | 'rejected';
-}
-
 export interface Experience {
     id?: string;
     title: string;
@@ -50,8 +30,8 @@ export interface UserProfile {
         portfolio?: string;
         location: string;
     };
-    experience: Experience[];
-    education: Education[];
+    experience?: Experience[];
+    education?: Education[];
     preferences: {
         remoteOnly: boolean;
         excludedKeywords: string[];

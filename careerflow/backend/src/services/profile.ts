@@ -59,6 +59,8 @@ class ProfileService {
                 linkedin: '',
                 location: 'Remote'
             },
+            experience: [],
+            education: [],
             preferences: {
                 remoteOnly: false,
                 excludedKeywords: [],

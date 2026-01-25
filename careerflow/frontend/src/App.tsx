@@ -7,6 +7,7 @@ import JobsTable from './components/Dashboard/JobsTable';
 import RightPanel from './components/Dashboard/RightPanel';
 import KanbanBoard from './components/Kanban/KanbanBoard';
 import ProfilePage from './components/Profile/ProfilePage';
+import ResumePage from './components/Resume/ResumePage';
 
 // Styles for the layout
 const layoutStyles: React.CSSProperties = {
@@ -67,6 +68,10 @@ const App: React.FC = () => {
                     ) : currentView === 'profile' ? (
                         <div style={{ gridColumn: '1 / -1' }}>
                             <ProfilePage />
+                        </div>
+                    ) : currentView === 'resume' ? (
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <ResumePage />
                         </div>
                     ) : (
                         <div style={{ gridColumn: '1 / -1', padding: '20px', backgroundColor: 'white', borderRadius: '12px' }}>

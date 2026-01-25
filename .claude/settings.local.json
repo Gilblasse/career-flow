@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsx:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(curl:*)",
+      "Bash(ping:*)",
+      "Bash(taskkill:*)",
+      "Bash(rd /s /q \"%LOCALAPPDATA%\\\\node_modules\\\\.cache\")",
+      "Bash(rd /s /q \"c:\\\\Users\\\\EmmanuelBlasse\\\\source\\\\Personal\\\\AntiGravity\\\\Job Apply - Copy\\\\careerflow\\\\backend\\\\node_modules\\\\.cache\")",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)"
+    ]
+  }
+}
