@@ -5,6 +5,7 @@ import ProfileBanner from './components/Dashboard/ProfileBanner';
 import OverviewStats from './components/Dashboard/OverviewStats';
 import JobsTable from './components/Dashboard/JobsTable';
 import RightPanel from './components/Dashboard/RightPanel';
+import KanbanBoard from './components/Kanban/KanbanBoard';
 
 // Styles for the layout
 const layoutStyles: React.CSSProperties = {
@@ -34,25 +35,33 @@ const contentColumnStyles: React.CSSProperties = {
 };
 
 const App: React.FC = () => {
+    const [currentView, setCurrentView] = React.useState('dashboard');
+
     return (
         <div style={layoutStyles}>
-            <Sidebar />
+            <Sidebar currentView={currentView} onNavigate={setCurrentView} />
 
             <div style={mainContainerStyles}>
                 <Header />
 
                 <main style={dashboardGridStyles}>
-                    <div style={contentColumnStyles}>
-                        {/* Left/Main Column */}
-                        <ProfileBanner />
-                        <OverviewStats />
-                        <JobsTable />
-                    </div>
+                    {currentView === 'dashboard' ? (
+                        <>
+                            <div style={contentColumnStyles}>
+                                {/* Left/Main Column */}
+                                <ProfileBanner />
+                                <OverviewStats />
+                                <JobsTable />
+                            </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                        {/* Right Column */}
-                        <RightPanel />
-                    </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                                {/* Right Column */}
+                                <RightPanel />
+                            </div>
+                        </>
+                    ) : (
+                        <KanbanBoard />
+                    )}
                 </main>
             </div>
         </div>

@@ -1,14 +1,19 @@
-import { Home, FileUser, FileText, KanbanSquare, Presentation, LifeBuoy, Settings } from 'lucide-react';
+import { Home, FileUser, FileText, KanbanSquare, LifeBuoy, Settings } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+    currentView: string;
+    onNavigate: (view: string) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
     const menuItems = [
-        { name: 'Dashboard', icon: <Home size={20} />, active: true },
-        { name: 'Resume', icon: <FileUser size={20} />, active: false },
-        { name: 'Cover letter', icon: <FileText size={20} />, active: false },
-        { name: 'Kanban Board', icon: <KanbanSquare size={20} />, active: false },
-        { name: 'Mock Test', icon: <Presentation size={20} />, active: false },
-        { name: 'Help Center', icon: <LifeBuoy size={20} />, active: false },
-        { name: 'Settings', icon: <Settings size={20} />, active: false },
+        { name: 'Dashboard', icon: <Home size={20} />, id: 'dashboard' },
+        { name: 'Resume', icon: <FileUser size={20} />, id: 'resume' },
+        { name: 'Cover letter', icon: <FileText size={20} />, id: 'cover-letter' },
+        { name: 'Application Process', icon: <KanbanSquare size={20} />, id: 'kanban' },
+
+        { name: 'Help Center', icon: <LifeBuoy size={20} />, id: 'help' },
+        { name: 'Settings', icon: <Settings size={20} />, id: 'settings' },
     ];
 
     return (
@@ -43,27 +48,35 @@ const Sidebar: React.FC = () => {
             {/* Navigation */}
             <nav style={{ flex: 1 }}>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {menuItems.map((item) => (
-                        <li key={item.name}>
-                            <a href="#" style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '15px',
-                                padding: '12px 20px',
-                                borderRadius: '12px', // Slightly rounder
-                                color: item.active ? 'var(--color-primary)' : '#52575C', // Specific gray
-                                backgroundColor: item.active ? '#F2F6FF' : 'transparent', // Light blue bg
-                                fontWeight: item.active ? '700' : '500', // Bolder active state
-                                fontSize: '15px',
-                                transition: 'all 0.2s ease',
-                            }}>
-                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {item.icon}
-                                </span>
-                                {item.name}
-                            </a>
-                        </li>
-                    ))}
+                    {menuItems.map((item) => {
+                        const isActive = currentView === item.id;
+                        return (
+                            <li key={item.name}>
+                                <a href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        onNavigate(item.id);
+                                    }}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '15px',
+                                        padding: '12px 20px',
+                                        borderRadius: '12px', // Slightly rounder
+                                        color: isActive ? 'var(--color-primary)' : '#52575C', // Specific gray
+                                        backgroundColor: isActive ? '#F2F6FF' : 'transparent', // Light blue bg
+                                        fontWeight: isActive ? '700' : '500', // Bolder active state
+                                        fontSize: '15px',
+                                        transition: 'all 0.2s ease',
+                                    }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {item.icon}
+                                    </span>
+                                    {item.name}
+                                </a>
+                            </li>
+                        )
+                    })}
                 </ul>
             </nav>
 
