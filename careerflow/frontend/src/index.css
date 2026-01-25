@@ -1,0 +1,74 @@
+:root {
+    /* Premium Color Palette */
+    --color-primary: #446bf2;
+    --color-primary-hover: #3354c5;
+    --color-bg-base: #f8f9fc;
+    --color-bg-sidebar: #ffffff;
+    --color-bg-card: #ffffff;
+    --color-text-dark: #1a1c23;
+    --color-text-gray: #9fa2b4;
+    --color-text-light: #ffffff;
+    --color-border: #dfe0eb;
+
+    /* Status Colors */
+    --color-success: #29cc97;
+    --color-warning: #fec400;
+    --color-danger: #f12b2c;
+
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.5rem;
+
+    /* Spacing & Layout */
+    --sidebar-width: 255px;
+    --header-height: 70px;
+    --radius-md: 10px;
+    --radius-lg: 20px;
+    --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--color-bg-base);
+    color: var(--color-text-dark);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccd0db;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #aeb3c0;
+}

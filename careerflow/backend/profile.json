@@ -1,0 +1,41 @@
+{
+    "contact": {
+        "firstName": "Emmanuel",
+        "lastName": "Blasse",
+        "email": "emmanuel.blasse@example.com",
+        "phone": "+1-555-010-5555",
+        "linkedin": "https://linkedin.com/in/emmanuelblasse",
+        "github": "https://github.com/emmanuelblasse",
+        "portfolio": "https://emmanuelblasse.com",
+        "location": "San Francisco, CA"
+    },
+    "preferences": {
+        "remoteOnly": true,
+        "excludedKeywords": [
+            "Java",
+            ".NET",
+            "C#",
+            "Azure"
+        ],
+        "maxSeniority": [
+            "Principal",
+            "Staff",
+            "Director",
+            "VP"
+        ],
+        "locations": [
+            "San Francisco, CA",
+            "New York, NY"
+        ],
+        "minSalary": 150000
+    },
+    "skills": [
+        "TypeScript",
+        "React",
+        "Node.js",
+        "Python",
+        "AWS",
+        "PostgreSQL",
+        "GraphQL"
+    ]
+}
