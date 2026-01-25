@@ -1,6 +1,34 @@
-import React from 'react';
+import { User, Settings, LogOut } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+    onNavigate?: (view: string) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleNavigate = (view: string) => {
+        if (onNavigate) {
+            onNavigate(view);
+            setIsMenuOpen(false);
+        }
+    };
+
     return (
         <header style={{
             height: 'var(--header-height)',
@@ -58,7 +86,11 @@ const Header: React.FC = () => {
                 </div>
 
                 {/* Profile */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div
+                    ref={menuRef}
+                    style={{ display: 'flex', alignItems: 'center', gap: '15px', position: 'relative', cursor: 'pointer' }}
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
                     <div style={{ textAlign: 'right' }}>
                         <div style={{ fontWeight: '600', fontSize: '14px' }}>H. Johnson</div>
                         <div style={{ fontSize: '12px', color: 'var(--color-text-gray)' }}>Admin</div>
@@ -70,8 +102,72 @@ const Header: React.FC = () => {
                         backgroundColor: '#e0e0e0',
                         backgroundImage: 'url("https://i.pravatar.cc/150?img=11")', // Placeholder avatar
                         backgroundSize: 'cover',
-                        backgroundPosition: 'center'
+                        backgroundPosition: 'center',
+                        border: isMenuOpen ? '2px solid var(--color-primary)' : 'none'
                     }}></div>
+
+                    {/* Dropdown Menu */}
+                    {isMenuOpen && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '120%',
+                            right: 0,
+                            width: '200px',
+                            backgroundColor: 'white',
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                            border: '1px solid #F3F4F6',
+                            overflow: 'hidden',
+                            zIndex: 100,
+                            animation: 'scaleIn 0.2s ease-out'
+                        }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div style={{ padding: '8px' }}>
+                                <button
+                                    onClick={() => handleNavigate('profile')}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                                        padding: '10px 12px', border: 'none', background: 'transparent',
+                                        borderRadius: '8px', cursor: 'pointer', color: '#374151',
+                                        fontSize: '14px', textAlign: 'left',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    <User size={16} /> Profile
+                                </button>
+                                <button
+                                    onClick={() => handleNavigate('settings')}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                                        padding: '10px 12px', border: 'none', background: 'transparent',
+                                        borderRadius: '8px', cursor: 'pointer', color: '#374151',
+                                        fontSize: '14px', textAlign: 'left',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    <Settings size={16} /> Settings
+                                </button>
+                                <div style={{ height: '1px', backgroundColor: '#E5E7EB', margin: '4px 0' }}></div>
+                                <button style={{
+                                    display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                                    padding: '10px 12px', border: 'none', background: 'transparent',
+                                    borderRadius: '8px', cursor: 'pointer', color: '#EF4444',
+                                    fontSize: '14px', textAlign: 'left',
+                                    transition: 'background 0.2s'
+                                }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    <LogOut size={16} /> Logout
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </header>

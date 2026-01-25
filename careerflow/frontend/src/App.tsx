@@ -6,6 +6,7 @@ import OverviewStats from './components/Dashboard/OverviewStats';
 import JobsTable from './components/Dashboard/JobsTable';
 import RightPanel from './components/Dashboard/RightPanel';
 import KanbanBoard from './components/Kanban/KanbanBoard';
+import ProfilePage from './components/Profile/ProfilePage';
 
 // Styles for the layout
 const layoutStyles: React.CSSProperties = {
@@ -42,7 +43,7 @@ const App: React.FC = () => {
             <Sidebar currentView={currentView} onNavigate={setCurrentView} />
 
             <div style={mainContainerStyles}>
-                <Header />
+                <Header onNavigate={setCurrentView} />
 
                 <main style={dashboardGridStyles}>
                     {currentView === 'dashboard' ? (
@@ -59,8 +60,19 @@ const App: React.FC = () => {
                                 <RightPanel />
                             </div>
                         </>
+                    ) : currentView === 'kanban' ? (
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <KanbanBoard />
+                        </div>
+                    ) : currentView === 'profile' ? (
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <ProfilePage />
+                        </div>
                     ) : (
-                        <KanbanBoard />
+                        <div style={{ gridColumn: '1 / -1', padding: '20px', backgroundColor: 'white', borderRadius: '12px' }}>
+                            <h2>{currentView.charAt(0).toUpperCase() + currentView.slice(1)}</h2>
+                            <p>This page is under construction.</p>
+                        </div>
                     )}
                 </main>
             </div>
