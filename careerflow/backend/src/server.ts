@@ -6,6 +6,8 @@ import QueueProcessor from './modules/queue/processor.js';
 import JobStore from './modules/ingestion/job-store.js';
 import Logger from './services/logger.js';
 import { UserProfile } from './types.js';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 const PORT = 3001;
@@ -125,57 +127,244 @@ app.post('/api/resume/parse', upload.single('resume'), async (req, res) => {
         const education: any[] = [];
         const skills: string[] = [];
 
-        const normalizedText = text; // Keep case for extraction but lower for search might be safer?
+        const normalizedText = text;
+
+        // Debug Logging
+        console.log("=== PARSING START ===");
+        console.log(`Total Text Length: ${normalizedText.length}`);
+        fs.writeFileSync(path.resolve('parser_debug.log'), `=== PARSE AT ${new Date().toISOString()} ===\n${normalizedText}\n\n`);
 
         // Helper to find index of section headers
-        const findSectionStart = (keyword: string) => {
-            const regex = new RegExp(`^${keyword}`, 'im');
-            // Simple approach: indexOf might be enough if we assume standard headers
-            return normalizedText.toLowerCase().indexOf(keyword.toLowerCase());
+        // Robust Regex: Start of line, optional whitespace, Keyword, optional max 30 chars (to prevent long sentences), End of line or close to it.
+        const findSectionIndex = (keywords: string[]) => {
+            const pattern = new RegExp(`^[\\s]*(${keywords.join('|')}).{0,30}$`, 'im');
+            const match = normalizedText.match(pattern);
+            return match ? match.index : -1;
         };
 
-        const expIndex = findSectionStart('Experience');
-        const eduIndex = findSectionStart('Education');
-        const skillsIndex = findSectionStart('Skills');
+        const expIndex = findSectionIndex(['Experience', 'Work History', 'Employment']);
+        const eduIndex = findSectionIndex(['Education', 'Academic', 'Qualifications', 'University']);
+        const skillsIndex = findSectionIndex(['Skills', 'Technical Skills', 'Core Competencies', 'Technologies']);
+
+        console.log(`[Parser] Indices - Exp: ${expIndex}, Edu: ${eduIndex}, Skills: ${skillsIndex}`);
 
         // Sort indices to know which section comes first/next
         const sections = [
             { name: 'experience', index: expIndex },
             { name: 'education', index: eduIndex },
             { name: 'skills', index: skillsIndex }
-        ].filter(s => s.index !== -1).sort((a, b) => a.index - b.index);
+        ].filter(s => s.index !== undefined && s.index !== -1).sort((a, b) => (a.index!) - (b.index!));
 
         // Extract content logic (Simplified)
         sections.forEach((section, i) => {
-            const start = section.index;
+            const start = section.index!;
             const nextSection = sections[i + 1];
             const end = nextSection ? nextSection.index : normalizedText.length;
 
-            // +10 to skip the header itself loosely
-            let content = normalizedText.substring(start, end).replace(new RegExp(section.name, 'i'), '').trim();
+            // Get content and remove the header line
+            const sectionRaw = normalizedText.substring(start, end);
+            const firstNewLine = sectionRaw.indexOf('\n');
+            let content = (firstNewLine !== -1 ? sectionRaw.substring(firstNewLine) : sectionRaw).trim();
+
+            console.log(`[Parser] Section ${section.name} detected. Length: ${content.length}`);
 
             if (section.name === 'experience') {
-                // Try to split by date patterns or newlines to guess items
-                // For now, put a placeholder if content exists.
-                if (content.length > 50) {
-                    experience.push({
-                        title: "Parsed Role (Review Required)",
-                        company: "Parsed Company",
-                        description: content.substring(0, 500) + "..." // Truncate
-                    });
+                // Heuristic Parsing for Experience
+                // 1. Split by lines
+                const safeContent = content || "";
+                const lines = safeContent.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+                // 2. Regex for Dates
+                const dateRangeRegex = /((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s?\d{4}|\d{1,2}\/\d{4}|\d{4})\s*[-–to]+\s*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s?\d{4}|\d{1,2}\/\d{4}|\d{4}|Present|Current|Now)/i;
+
+                let currentRole: any = null;
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (!line || !line.trim()) continue;
+
+                    if (dateRangeRegex.test(line)) {
+                        // If we found a date line, the PREVIOUS lines might be the description of the *previous* role
+                        // and this line starts a NEW role.
+
+                        // Save previous role if exists
+                        if (currentRole) {
+                            experience.push(currentRole);
+                        }
+
+                        let title = "Unknown Role";
+                        let company = "Unknown Company";
+                        const match = line.match(dateRangeRegex);
+                        const dateStr = match ? match[0] : "";
+                        const startDate = match?.[1] || "";
+                        const endDate = match?.[2] || "";
+
+                        // Strategy 1: Check if the current line contains Title/Company info (Single line format)
+                        // Example: "Company – Title Dates" or "Title | Company | Dates"
+                        const textWithoutDate = line.replace(dateStr, "").trim();
+
+                        // If significant text remains (> 5 chars), assume Single Line Format
+                        if (textWithoutDate.length > 5) {
+                            // Try to split
+                            const separators = [/—/, /–/, /\|/, / - /, /•/];
+                            let parts: string[] = [textWithoutDate];
+
+                            for (const sep of separators) {
+                                if (textWithoutDate.split(sep).length > 1) {
+                                    parts = textWithoutDate.split(sep).map(s => s.trim()).filter(s => s.length > 0);
+                                    break;
+                                }
+                            }
+
+                            if (parts.length >= 2) {
+                                title = parts[parts.length - 1] || "Unknown Role";
+                                company = parts[0] || "Unknown Company";
+                            } else {
+                                if (textWithoutDate.includes(' at ')) {
+                                    const parts = textWithoutDate.split(' at ');
+                                    title = parts[0] || "Unknown Role";
+                                    company = parts[1] || "Unknown Company";
+                                } else {
+                                    company = textWithoutDate;
+                                }
+                            }
+                        }
+                        // Strategy 2: Look at previous lines (Multi-line format)
+                        else if (i > 0) {
+                            const prevLine = lines[i - 1];
+                            if (prevLine) {
+                                if (prevLine.includes(' at ')) {
+                                    const parts = prevLine.split(' at ');
+                                    title = parts[0] || "Unknown Role";
+                                    company = parts[1] || "Unknown Company";
+                                } else if (prevLine.includes(' | ')) {
+                                    const parts = prevLine.split(' | ');
+                                    title = parts[0] || "Unknown Role";
+                                    company = parts[1] || "Unknown Company";
+                                } else {
+                                    const parts = prevLine.split(',');
+                                    if (parts.length > 1) {
+                                        title = parts[0] || "Unknown Role";
+                                        company = parts[1] || "Unknown Company";
+                                    } else {
+                                        title = prevLine;
+                                        if (i > 1) {
+                                            const prevPrevLine = lines[i - 2];
+                                            if (prevPrevLine) {
+                                                company = prevPrevLine;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        currentRole = {
+                            title: title.trim(),
+                            company: company.trim(),
+                            startDate,
+                            endDate,
+                            description: ""
+                        };
+
+                    } else if (currentRole) {
+                        currentRole.description += line + "\n";
+                    }
+                }
+
+                // Push last role
+                if (currentRole) {
+                    experience.push(currentRole);
                 }
             } else if (section.name === 'education') {
-                if (content.length > 20) {
-                    education.push({
-                        institution: "Parsed Institution",
-                        degree: "Parsed Degree",
-                        description: content.substring(0, 200)
-                    });
+                // Heuristic Parsing for Education
+                const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+                // Keywords for Degrees
+                const degreeKeywords = ['bachelor', 'master', 'phd', 'b.s.', 'b.a.', 'm.s.', 'm.a.', 'mba', 'associate', 'degree', 'computer science', 'bba'];
+
+                let currentEdu: any = null;
+
+                for (const line of lines) {
+                    const lower = line.toLowerCase();
+                    // If line contains degree keyword, it's likely a degree or same block
+                    const hasDegree = degreeKeywords.some(k => lower.includes(k));
+
+                    if (hasDegree) {
+                        // If we already have one, push it
+                        if (currentEdu) education.push(currentEdu);
+
+                        currentEdu = {
+                            institution: "University (Parsed)", // Placeholder or strict extract
+                            degree: line,
+                            description: ""
+                        };
+                    } else if (currentEdu) {
+                        currentEdu.description += line + "\n";
+                    } else {
+                        // Maybe this is the university name appearing BEFORE the degree?
+                        // Treat as start of potential block if it doesn't look like a degree
+                        currentEdu = {
+                            institution: line,
+                            degree: "Degree Unknown",
+                            description: ""
+                        };
+                    }
                 }
+                if (currentEdu) education.push(currentEdu);
+
             } else if (section.name === 'skills') {
-                // Split by commas or bullets
-                const extracted = content.split(/,|•|\n/).map(s => s.trim()).filter(s => s.length > 2 && s.length < 30);
-                skills.push(...extracted);
+                // Skills Heuristic: Strict Filtering
+
+                const KNOWN_SKILLS = new Set([
+                    // Languages
+                    'javascript', 'typescript', 'python', 'java', 'c++', 'c#', 'ruby', 'go', 'golang', 'rust', 'swift', 'kotlin', 'php', 'html', 'css', 'sql', 'nosql', 'bash', 'shell',
+                    // Frontend
+                    'react', 'reactjs', 'vue', 'vuejs', 'angular', 'svelte', 'next.js', 'nuxt', 'redux', 'mobx', 'tailwind', 'sass', 'less', 'webpack', 'vite', 'graphql',
+                    // Backend
+                    'node', 'nodejs', 'express', 'nestjs', 'django', 'flask', 'fastapi', 'rails', 'spring', 'spring boot', '.net', 'asp.net',
+                    // Data / Cloud / Tools
+                    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'git', 'github', 'gitlab', 'jira', 'confluence', 'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch', 'kafka', 'tensorflow', 'pytorch', 'pandas', 'numpy', 'scikit-learn',
+                    // Concepts
+                    'rest', 'api', 'ci/cd', 'agile', 'scrum', 'oop', 'mvc', 'microservices', 'serverless'
+                ]);
+
+                const STOP_PHRASES = [
+                    'skills', 'experience', 'working', 'knowledge', 'proficient', 'familiar', 'technologies', 'tools', 'languages', 'frameworks',
+                    'solutions', 'scalable', 'complicated', 'simple', 'clean', 'efficient', 'maintainable', 'robust'
+                ];
+
+                // Split by common separators
+                // \n, ",", "•", "|", "·"
+                const rawTokens = content.split(/[\n,•|·]/);
+
+                const validSkills = new Set<string>();
+
+                for (const token of rawTokens) {
+                    const cleanToken = token.trim();
+                    const lowerToken = cleanToken.toLowerCase();
+
+                    // 1. Hard Rejects
+                    if (cleanToken.length < 2) continue; // "C" is rare alone, usually "C++" which is > 2, but "R" exists. Heuristic: Skip 1 char for now unless specific whitelist.
+                    if (cleanToken.length > 30) continue; // Too long -> Sentence
+
+                    // Email/Phone/Zip Check (Basic)
+                    if (/@/.test(cleanToken)) continue; // Email
+                    if (/\d{3}[-.]?\d{3}[-.]?\d{4}/.test(cleanToken)) continue; // Phone
+                    if (/\b\d{5}\b/.test(cleanToken)) continue; // Zip code like 75089
+                    if (/^\d+$/.test(cleanToken)) continue; // Just numbers
+
+                    // 2. Stop Phrase Check
+                    if (STOP_PHRASES.some(stop => lowerToken.includes(stop))) continue;
+
+                    // 3. Whitelist Check (Prioritize)
+                    if (KNOWN_SKILLS.has(lowerToken)) {
+                        validSkills.add(cleanToken);
+                        continue;
+                    }
+                }
+
+                skills.push(...Array.from(validSkills));
             }
         });
 

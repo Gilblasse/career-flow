@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UserProfile } from '../../types';
-import { UploadCloud, FileText, CheckCircle, AlertCircle, Save, Loader2 } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle, AlertCircle, Save, Loader2, Plus, Trash2, X } from 'lucide-react';
 
 const ResumePage: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -8,6 +8,26 @@ const ResumePage: React.FC = () => {
     const [parsedData, setParsedData] = useState<Partial<UserProfile> | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [dragActive, setDragActive] = useState(false);
+
+    // Skills Input State
+    const [newSkill, setNewSkill] = useState("");
+
+    // Auto-scroll Refs
+    const experienceEndRef = React.useRef<HTMLDivElement>(null);
+    const educationEndRef = React.useRef<HTMLDivElement>(null);
+    const [justAdded, setJustAdded] = useState<'exp' | 'edu' | null>(null);
+
+    // Auto-scroll effect
+    useEffect(() => {
+        if (justAdded === 'exp' && experienceEndRef.current) {
+            experienceEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setJustAdded(null);
+        }
+        if (justAdded === 'edu' && educationEndRef.current) {
+            educationEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setJustAdded(null);
+        }
+    }, [parsedData, justAdded]);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -99,8 +119,75 @@ const ResumePage: React.FC = () => {
         }
     };
 
+    // --- Edit Handlers ---
+
+    const updateContact = (field: string, value: string) => {
+        if (!parsedData) return;
+        setParsedData({
+            ...parsedData,
+            contact: { ...parsedData.contact, [field]: value } as any
+        });
+    };
+
+    const updateExperience = (index: number, field: string, value: string) => {
+        if (!parsedData || !parsedData.experience) return;
+        const newExp = [...parsedData.experience];
+        newExp[index] = { ...newExp[index], [field]: value };
+        setParsedData({ ...parsedData, experience: newExp });
+    };
+
+    const addExperience = () => {
+        if (!parsedData) return;
+        const newExp = [...(parsedData.experience || []), { title: "New Role", company: "Company", description: "" }];
+        setParsedData({ ...parsedData, experience: newExp });
+        setJustAdded('exp');
+    };
+
+    const removeExperience = (index: number) => {
+        if (!parsedData || !parsedData.experience) return;
+        const newExp = parsedData.experience.filter((_, i) => i !== index);
+        setParsedData({ ...parsedData, experience: newExp });
+    };
+
+    // Education Handlers
+    const updateEducation = (index: number, field: string, value: string) => {
+        if (!parsedData || !parsedData.education) return;
+        const newEdu = [...parsedData.education];
+        newEdu[index] = { ...newEdu[index], [field]: value };
+        setParsedData({ ...parsedData, education: newEdu });
+    };
+
+    const addEducation = () => {
+        if (!parsedData) return;
+        const newEdu = [...(parsedData.education || []), { institution: "University", degree: "Degree", description: "" }];
+        setParsedData({ ...parsedData, education: newEdu });
+        setJustAdded('edu');
+    };
+
+    const removeEducation = (index: number) => {
+        if (!parsedData || !parsedData.education) return;
+        const newEdu = parsedData.education.filter((_, i) => i !== index);
+        setParsedData({ ...parsedData, education: newEdu });
+    };
+
+    // Skills Handlers
+    const removeSkill = (skillToRemove: string) => {
+        if (!parsedData || !parsedData.skills) return;
+        const newSkills = parsedData.skills.filter(s => s !== skillToRemove);
+        setParsedData({ ...parsedData, skills: newSkills });
+    };
+
+    const addSkill = () => {
+        if (!parsedData || !newSkill.trim()) return;
+        const currentSkills = parsedData.skills || [];
+        if (!currentSkills.includes(newSkill.trim())) {
+            setParsedData({ ...parsedData, skills: [...currentSkills, newSkill.trim()] });
+        }
+        setNewSkill("");
+    };
+
     return (
-        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '30px' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '30px', paddingBottom: '50px' }}>
 
             {/* Header Section */}
             <div>
@@ -196,7 +283,7 @@ const ResumePage: React.FC = () => {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <CheckCircle size={20} color="#059669" /> Parsed Results
+                            <CheckCircle size={20} color="#059669" /> Parsed Results (Editable)
                         </h2>
                         <button
                             onClick={handleSaveProfile}
@@ -217,51 +304,170 @@ const ResumePage: React.FC = () => {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '24px' }}>
-                        {/* Left Col: Contact Info */}
+                        {/* Left Col: Contact Info (Editable) */}
                         <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', height: 'fit-content' }}>
                             <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Contact Details</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <FieldDisplay label="First Name" value={parsedData.contact?.firstName} />
-                                <FieldDisplay label="Last Name" value={parsedData.contact?.lastName} />
-                                <FieldDisplay label="Email" value={parsedData.contact?.email} />
-                                <FieldDisplay label="Phone" value={parsedData.contact?.phone} />
+                                <FieldInput label="First Name" value={parsedData.contact?.firstName} onChange={(v) => updateContact('firstName', v)} />
+                                <FieldInput label="Last Name" value={parsedData.contact?.lastName} onChange={(v) => updateContact('lastName', v)} />
+                                <FieldInput label="Email" value={parsedData.contact?.email} onChange={(v) => updateContact('email', v)} />
+                                <FieldInput label="Phone" value={parsedData.contact?.phone} onChange={(v) => updateContact('phone', v)} />
                             </div>
                         </div>
 
                         {/* Right Col: Detailed Info */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                            {/* Experience */}
+                            {/* Experience (Editable) */}
                             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Experience Included</h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>Experience</h3>
+                                    <button onClick={addExperience} style={{ color: '#2563EB', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: '500' }}>
+                                        <Plus size={16} /> Add Role
+                                    </button>
+                                </div>
+
                                 {parsedData.experience && parsedData.experience.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         {parsedData.experience.map((exp: any, i: number) => (
-                                            <div key={i} style={{ padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #F3F4F6' }}>
-                                                <div style={{ fontWeight: '600', color: '#111827' }}>{exp.title}</div>
-                                                <div style={{ fontSize: '14px', color: '#4B5563' }}>{exp.company}</div>
-                                                <p style={{ marginTop: '4px', fontSize: '13px', color: '#6B7280', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                                    {exp.description}
-                                                </p>
+                                            <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #F3F4F6', position: 'relative' }}>
+                                                <button
+                                                    onClick={() => removeExperience(i)}
+                                                    style={{ position: 'absolute', top: '12px', right: '12px', color: '#9CA3AF', cursor: 'pointer', background: 'none', border: 'none' }}
+                                                    title="Remove"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={exp.title || ""}
+                                                        onChange={(e) => updateExperience(i, 'title', e.target.value)}
+                                                        placeholder="Job Title"
+                                                        style={inputStyle}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={exp.company || ""}
+                                                        onChange={(e) => updateExperience(i, 'company', e.target.value)}
+                                                        placeholder="Company"
+                                                        style={inputStyle}
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={exp.startDate || ""}
+                                                        onChange={(e) => updateExperience(i, 'startDate', e.target.value)}
+                                                        placeholder="Start Date"
+                                                        style={inputStyle}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={exp.endDate || ""}
+                                                        onChange={(e) => updateExperience(i, 'endDate', e.target.value)}
+                                                        placeholder="End Date"
+                                                        style={inputStyle}
+                                                    />
+                                                </div>
+
+                                                <textarea
+                                                    value={exp.description || ""}
+                                                    onChange={(e) => updateExperience(i, 'description', e.target.value)}
+                                                    placeholder="Description..."
+                                                    rows={4}
+                                                    style={{ ...inputStyle, width: '100%', minHeight: '80px', resize: 'vertical' }}
+                                                />
                                             </div>
                                         ))}
+                                        <div ref={experienceEndRef} />
                                     </div>
                                 ) : (
                                     <p style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No experience sections detected.</p>
                                 )}
                             </div>
 
-                            {/* Skills */}
+                            {/* Education (Editable) */}
+                            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>Education</h3>
+                                    <button onClick={addEducation} style={{ color: '#2563EB', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: '500' }}>
+                                        <Plus size={16} /> Add Education
+                                    </button>
+                                </div>
+
+                                {parsedData.education && parsedData.education.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        {parsedData.education.map((edu: any, i: number) => (
+                                            <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #F3F4F6', position: 'relative' }}>
+                                                <button
+                                                    onClick={() => removeEducation(i)}
+                                                    style={{ position: 'absolute', top: '12px', right: '12px', color: '#9CA3AF', cursor: 'pointer', background: 'none', border: 'none' }}
+                                                    title="Remove"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginBottom: '12px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={edu.institution || ""}
+                                                        onChange={(e) => updateEducation(i, 'institution', e.target.value)}
+                                                        placeholder="Institution / University"
+                                                        style={inputStyle}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={edu.degree || ""}
+                                                        onChange={(e) => updateEducation(i, 'degree', e.target.value)}
+                                                        placeholder="Degree / Certificate"
+                                                        style={inputStyle}
+                                                    />
+                                                </div>
+                                                <textarea
+                                                    value={edu.description || ""}
+                                                    onChange={(e) => updateEducation(i, 'description', e.target.value)}
+                                                    placeholder="Additional Details..."
+                                                    rows={2}
+                                                    style={{ ...inputStyle, width: '100%', minHeight: '50px', resize: 'vertical' }}
+                                                />
+                                            </div>
+                                        ))}
+                                        <div ref={educationEndRef} />
+                                    </div>
+                                ) : (
+                                    <p style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No education detected.</p>
+                                )}
+                            </div>
+
+                            {/* Skills (Editable) */}
                             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                                 <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Detail Skills Extraction</h3>
+
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                                    <input
+                                        type="text"
+                                        value={newSkill}
+                                        onChange={(e) => setNewSkill(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && addSkill()}
+                                        placeholder="Add a skill..."
+                                        style={inputStyle}
+                                    />
+                                    <button onClick={addSkill} style={{ backgroundColor: '#2563EB', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}>Add</button>
+                                </div>
+
                                 {parsedData.skills && parsedData.skills.length > 0 ? (
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                         {parsedData.skills.map((skill: string, i: number) => (
                                             <span key={i} style={{
-                                                backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '4px 12px',
-                                                borderRadius: '20px', fontSize: '13px', fontWeight: '500'
+                                                backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '4px 8px 4px 12px',
+                                                borderRadius: '20px', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px'
                                             }}>
                                                 {skill}
+                                                <button onClick={() => removeSkill(skill)} style={{ cursor: 'pointer', background: 'none', border: 'none', color: '#1D4ED8', padding: 0, display: 'flex' }}>
+                                                    <X size={14} />
+                                                </button>
                                             </span>
                                         ))}
                                     </div>
@@ -277,10 +483,28 @@ const ResumePage: React.FC = () => {
     );
 };
 
-const FieldDisplay = ({ label, value }: { label: string, value?: string }) => (
+// Styles
+const inputStyle = {
+    width: '100%',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    border: '1px solid #D1D5DB',
+    fontSize: '14px',
+    color: '#111827',
+    outline: 'none',
+    transition: 'border-color 0.2s'
+};
+
+const FieldInput = ({ label, value, onChange }: { label: string, value?: string, onChange: (v: string) => void }) => (
     <div>
-        <label style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
-        <div style={{ marginTop: '4px', color: '#111827', fontWeight: '500' }}>{value || <span style={{ color: '#D1D5DB' }}>Not found</span>}</div>
+        <label style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>{label}</label>
+        <input
+            type="text"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            style={inputStyle}
+            placeholder={label}
+        />
     </div>
 );
 
