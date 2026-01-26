@@ -55,8 +55,13 @@ const ResumePage: React.FC = () => {
     };
 
     const validateAndSetFile = (file: File) => {
-        if (file.type !== 'application/pdf') {
-            setError('Please upload a PDF file.');
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        if (!allowedTypes.includes(file.type)) {
+            setError('Please upload a PDF, DOC, or DOCX file.');
             return;
         }
         setFile(file);
@@ -215,7 +220,7 @@ const ResumePage: React.FC = () => {
                 <input
                     type="file"
                     onChange={handleFileChange}
-                    accept=".pdf"
+                    accept=".pdf,.doc,.docx"
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                 />
 
@@ -232,7 +237,7 @@ const ResumePage: React.FC = () => {
                             {file ? file.name : 'Click to upload or drag and drop'}
                         </p>
                         <p style={{ fontSize: '14px', color: '#6B7280' }}>
-                            {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : 'PDF files only (max 5MB)'}
+                            {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : 'PDF, DOC, DOCX files only (max 5MB)'}
                         </p>
                     </div>
 
@@ -425,19 +430,87 @@ const ResumePage: React.FC = () => {
                                                         style={inputStyle}
                                                     />
                                                 </div>
-                                                <textarea
-                                                    value={edu.description || ""}
-                                                    onChange={(e) => updateEducation(i, 'description', e.target.value)}
-                                                    placeholder="Additional Details..."
-                                                    rows={2}
-                                                    style={{ ...inputStyle, width: '100%', minHeight: '50px', resize: 'vertical' }}
-                                                />
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={edu.startDate || ""}
+                                                        onChange={(e) => updateEducation(i, 'startDate', e.target.value)}
+                                                        placeholder="Start Date (e.g., Aug 2011)"
+                                                        style={inputStyle}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={edu.endDate || ""}
+                                                        onChange={(e) => updateEducation(i, 'endDate', e.target.value)}
+                                                        placeholder="End Date (e.g., May 2015)"
+                                                        style={inputStyle}
+                                                    />
+                                                </div>
                                             </div>
                                         ))}
                                         <div ref={educationEndRef} />
                                     </div>
                                 ) : (
                                     <p style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No education detected.</p>
+                                )}
+                            </div>
+
+                            {/* Projects (Editable) */}
+                            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>Projects</h3>
+                                    <button onClick={() => {
+                                        const newProjects = [...(parsedData.projects || []), { name: '', description: '', technologies: [] }];
+                                        setParsedData({ ...parsedData, projects: newProjects });
+                                    }} style={{ color: '#2563EB', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: '500' }}>
+                                        <Plus size={16} /> Add Project
+                                    </button>
+                                </div>
+
+                                {parsedData.projects && parsedData.projects.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        {parsedData.projects.map((proj: any, i: number) => (
+                                            <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #F3F4F6', position: 'relative' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        const newProjects = parsedData.projects?.filter((_: any, idx: number) => idx !== i);
+                                                        setParsedData({ ...parsedData, projects: newProjects });
+                                                    }}
+                                                    style={{ position: 'absolute', top: '12px', right: '12px', color: '#9CA3AF', cursor: 'pointer', background: 'none', border: 'none' }}
+                                                    title="Remove"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={proj.name || ""}
+                                                        onChange={(e) => {
+                                                            const newProjects = [...(parsedData.projects || [])];
+                                                            newProjects[i] = { ...newProjects[i], name: e.target.value };
+                                                            setParsedData({ ...parsedData, projects: newProjects });
+                                                        }}
+                                                        placeholder="Project Name"
+                                                        style={inputStyle}
+                                                    />
+                                                    <textarea
+                                                        value={proj.description || ""}
+                                                        onChange={(e) => {
+                                                            const newProjects = [...(parsedData.projects || [])];
+                                                            newProjects[i] = { ...newProjects[i], description: e.target.value };
+                                                            setParsedData({ ...parsedData, projects: newProjects });
+                                                        }}
+                                                        placeholder="Project Description..."
+                                                        rows={3}
+                                                        style={{ ...inputStyle, width: '100%', minHeight: '60px', resize: 'vertical' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No projects detected.</p>
                                 )}
                             </div>
 
