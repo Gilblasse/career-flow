@@ -1,11 +1,13 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import ProfileService from './services/profile.js';
+import ProfileService, { validateResumeProfiles } from './services/profile.js';
 import ResumeGenerator from './modules/resume/generator.js';
+import ResumeParser from './modules/resume/parser.js';
 import QueueProcessor from './modules/queue/processor.js';
 import JobStore from './modules/ingestion/job-store.js';
 import Logger from './services/logger.js';
-import { UserProfile } from './types.js';
+import { UserProfile, ResumeProfile } from './types.js';
 import fs from 'fs';
 import path from 'path';
 // @ts-ignore
@@ -19,6 +21,73 @@ const PORT = 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// ============ Validation Helpers ============
+
+// Email regex pattern
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Phone regex: accepts (XXX) XXX-XXXX USA format
+const PHONE_REGEX = /^\(\d{3}\) \d{3}-\d{4}$/;
+
+/**
+ * Formats a phone number to (XXX) XXX-XXXX USA format
+ * Strips all non-digits, then formats accordingly
+ */
+function formatPhoneNumber(phone: string): string {
+    if (!phone) return '';
+    
+    // Strip all non-digit characters
+    let digits = phone.replace(/\D/g, '');
+    
+    // Remove leading 1 if present (country code)
+    if (digits.length === 11 && digits.startsWith('1')) {
+        digits = digits.slice(1);
+    }
+    
+    // Handle 10 digits
+    if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    
+    // Return original if doesn't match expected format
+    return phone;
+}
+
+interface ValidationError {
+    field: string;
+    message: string;
+}
+
+/**
+ * Validates profile data and returns array of errors
+ */
+function validateProfile(profile: UserProfile): ValidationError[] {
+    const errors: ValidationError[] = [];
+    
+    // Required fields
+    if (!profile.contact?.firstName?.trim()) {
+        errors.push({ field: 'firstName', message: 'First name is required' });
+    }
+    if (!profile.contact?.lastName?.trim()) {
+        errors.push({ field: 'lastName', message: 'Last name is required' });
+    }
+    if (!profile.contact?.email?.trim()) {
+        errors.push({ field: 'email', message: 'Email is required' });
+    } else if (!EMAIL_REGEX.test(profile.contact.email)) {
+        errors.push({ field: 'email', message: 'Invalid email format' });
+    }
+    
+    // Phone validation (if provided)
+    if (profile.contact?.phone?.trim()) {
+        const digits = profile.contact.phone.replace(/\D/g, '');
+        if (digits.length !== 10) {
+            errors.push({ field: 'phone', message: 'Phone must be 10 digits' });
+        }
+    }
+    
+    return errors;
+}
 
 // GET /
 app.get('/', (req, res) => {
@@ -39,11 +108,56 @@ app.get('/api/profile', (req, res) => {
 // POST /api/profile
 app.post('/api/profile', (req, res) => {
     try {
-        const newProfile = req.body as UserProfile;
-        // Basic validation logic could go here
-        if (!newProfile.contact || !newProfile.preferences) {
-            res.status(400).json({ error: 'Invalid profile data' });
-            return
+        const incomingData = req.body;
+        const skipContactValidation = req.query.skipContactValidation === 'true';
+        
+        // Get current profile to merge with
+        const currentProfile = ProfileService.getConfig();
+        
+        // Merge incoming data with current profile (for partial updates)
+        const newProfile: UserProfile = {
+            ...currentProfile,
+            ...incomingData,
+            contact: incomingData.contact ? { ...currentProfile.contact, ...incomingData.contact } : currentProfile.contact,
+            preferences: incomingData.preferences ? { ...currentProfile.preferences, ...incomingData.preferences } : currentProfile.preferences,
+            // Handle resume profiles - use incoming if provided, otherwise keep current
+            resumeProfiles: incomingData.resumeProfiles !== undefined ? incomingData.resumeProfiles : (currentProfile.resumeProfiles || []),
+            lastEditedProfileId: incomingData.lastEditedProfileId !== undefined ? incomingData.lastEditedProfileId : currentProfile.lastEditedProfileId,
+        };
+        
+        // Basic structure validation (only if contact/preferences are in the request)
+        if (incomingData.contact && (!newProfile.contact || !newProfile.preferences)) {
+            res.status(400).json({ error: 'Invalid profile data', errors: [{ field: 'profile', message: 'Missing contact or preferences' }] });
+            return;
+        }
+
+        // Validate required fields and formats (skip contact validation if flag is set)
+        if (!skipContactValidation && incomingData.contact) {
+            const validationErrors = validateProfile(newProfile);
+            if (validationErrors.length > 0) {
+                res.status(400).json({ 
+                    error: 'Validation failed', 
+                    errors: validationErrors 
+                });
+                return;
+            }
+        }
+        
+        // Validate resume profiles if provided
+        if (incomingData.resumeProfiles !== undefined) {
+            const profileErrors = validateResumeProfiles(newProfile.resumeProfiles || []);
+            if (profileErrors.length > 0) {
+                res.status(400).json({
+                    error: 'Resume profile validation failed',
+                    errors: profileErrors
+                });
+                return;
+            }
+        }
+
+        // Auto-format phone number before saving
+        if (newProfile.contact.phone) {
+            newProfile.contact.phone = formatPhoneNumber(newProfile.contact.phone);
         }
 
         ProfileService.saveConfig(newProfile);
@@ -51,6 +165,39 @@ app.post('/api/profile', (req, res) => {
     } catch (error) {
         Logger.error('API Error: POST /api/profile', error);
         res.status(500).json({ error: 'Failed to save profile' });
+    }
+});
+
+// POST /api/profile/reset - Dev mode only, bypasses validation
+app.post('/api/profile/reset', (req, res) => {
+    try {
+        const emptyProfile: UserProfile = {
+            contact: {
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                linkedin: '',
+                location: '',
+            },
+            experience: [],
+            education: [],
+            preferences: {
+                remoteOnly: false,
+                excludedKeywords: [],
+                maxSeniority: [],
+                locations: [],
+            },
+            skills: [],
+            resumeProfiles: [],
+        };
+
+        ProfileService.saveConfig(emptyProfile);
+        Logger.info('Profile reset to empty state (Dev Mode)');
+        res.json({ success: true, message: 'Profile reset successfully' });
+    } catch (error) {
+        Logger.error('API Error: POST /api/profile/reset', error);
+        res.status(500).json({ error: 'Failed to reset profile' });
     }
 });
 
@@ -92,416 +239,91 @@ app.post('/api/resume/parse', upload.single('resume'), async (req, res) => {
         }
 
         const buffer = fileRequest.file.buffer;
-        let text = '';
-
         const mime = fileRequest.file.mimetype;
-        const ext = path.extname(fileRequest.file.originalname).toLowerCase();
+        const originalName = fileRequest.file.originalname;
 
-        Logger.info(`[Resume Parse] Processing: ${fileRequest.file.originalname} (Mime: ${mime}, Ext: ${ext})`);
+        Logger.info(`[Resume Parse] Processing via LLM: ${originalName} (Mime: ${mime})`);
 
-        if (mime === 'application/pdf' || ext === '.pdf') {
-            // pdf-parse v2 exports PDFParse class
-            const { PDFParse } = await import('pdf-parse');
-            const parser = new PDFParse({ data: buffer });
-            const result = await parser.getText();
-            text = result.text;
-        } else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === '.docx') {
-            // DOCX parsing with mammoth
-            const result = await mammoth.extractRawText({ buffer: buffer });
-            text = result.value;
-        } else if (mime === 'application/msword' || ext === '.doc') {
-            // DOC parsing with word-extractor
-            const extractor = new WordExtractor();
-            const extracted = await extractor.extract(buffer);
-            text = extracted.getBody();
-        } else {
-            // Fallback for text files
-            text = buffer.toString('utf-8');
-        }
+        // Use the centralized LLM-based parser
+        // We pass originalName as filePath to help with extension detection if needed
+        const parsedData = await ResumeParser.parse(originalName, mime, buffer);
 
-        // Basic Regex Parsing Logic
-
-        // 1. Email
-        const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/;
-        const emailMatch = text.match(emailRegex);
-        const email = emailMatch ? emailMatch[0] : '';
-
-        // 2. Phone
-        const phoneRegex = /(\+?\d{1,2}\s?)?(\(?\d{3}\)?[\s.-]?)?\d{3}[\s.-]?\d{4}/;
-        const phoneMatch = text.match(phoneRegex);
-        const phone = phoneMatch ? phoneMatch[0] : '';
-
-        // 3. Name (Heuristic: First line or capital words at top)
-        // Very basic: take first non-empty line
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        const name = (lines.length > 0 ? lines[0] : '') || '';
-        const [firstName, ...rest] = name.split(' ');
-        const lastName = rest.join(' ');
-
-        // 4. Extract Sections (Experience, Education, Skills) logic
-        // We look for keywords "Experience", "Education", "Skills" and take content between them.
-
-        const experience: any[] = [];
-        const education: any[] = [];
-        const skills: string[] = [];
-        const projects: any[] = [];
-
-        const normalizedText = text;
-
-        // Debug Logging
-        console.log("=== PARSING START ===");
-        console.log(`Total Text Length: ${normalizedText.length}`);
-        fs.writeFileSync(path.resolve('parser_debug.log'), `=== PARSE AT ${new Date().toISOString()} ===\n${normalizedText}\n\n`);
-
-        // Helper to find index of section headers
-        // Update: Allow prefix words like "Professional" (max 20 chars before keyword)
-        const findSectionIndex = (keywords: string[]) => {
-            // Look for lines that contain the keyword, are relatively short (header-like), 
-            // and allow some prefix (e.g. "Professional Experience")
-            const pattern = new RegExp(`^.{0,20}\\b(${keywords.join('|')})\\b.{0,30}$`, 'im');
-            const match = normalizedText.match(pattern);
-            return match ? match.index : -1;
-        };
-
-        const expIndex = findSectionIndex(['Experience', 'Work History', 'Employment']);
-        const eduIndex = findSectionIndex(['Education', 'Academic', 'Qualifications', 'University']);
-        const skillsIndex = findSectionIndex(['Skills', 'Technical Skills', 'Core Competencies', 'Technologies']);
-        const projectsIndex = findSectionIndex(['Projects', 'Personal Projects', 'Side Projects', 'Portfolio']);
-
-        console.log(`[Parser] Indices - Exp: ${expIndex}, Edu: ${eduIndex}, Skills: ${skillsIndex}, Projects: ${projectsIndex}`);
-
-        // Sort indices to know which section comes first/next
-        const sections = [
-            { name: 'experience', index: expIndex },
-            { name: 'education', index: eduIndex },
-            { name: 'skills', index: skillsIndex },
-            { name: 'projects', index: projectsIndex }
-        ].filter(s => s.index !== undefined && s.index !== -1).sort((a, b) => (a.index!) - (b.index!));
-
-        // Extract content logic (Simplified)
-        sections.forEach((section, i) => {
-            const start = section.index!;
-            const nextSection = sections[i + 1];
-            const end = nextSection ? nextSection.index : normalizedText.length;
-
-            // Get content and remove the header line
-            const sectionRaw = normalizedText.substring(start, end);
-            const firstNewLine = sectionRaw.indexOf('\n');
-            let content = (firstNewLine !== -1 ? sectionRaw.substring(firstNewLine) : sectionRaw).trim();
-
-            console.log(`[Parser] Section ${section.name} detected. Length: ${content.length}`);
-
-            if (section.name === 'experience') {
-                // Heuristic Parsing for Experience
-                // Approach: Detect potential job/role entries by looking for:
-                // 1. Lines with date ranges (e.g., "2015 - Present")
-                // 2. Lines that look like role titles (contain keywords like "Engineer", "Developer", etc.)
-                // 3. Lines that look like company names (short lines, possibly with location indicators)
-
-                const safeContent = content || "";
-                const lines = safeContent.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-                // Date detection regex - more flexible
-                const monthNames = "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
-                const datePartsPattern = `(${monthNames}\\s*\\d{4}|\\d{4}\\s*${monthNames}|\\d{1,2}/\\d{4}|\\d{4})`;
-                const dateRangeRegex = new RegExp(`${datePartsPattern}\\s*[-–\\sto]+\\s*(${datePartsPattern}|Present|Current|Now|present)`, 'i');
-
-                // Role title keywords
-                const roleTitleKeywords = ['engineer', 'developer', 'architect', 'manager', 'lead', 'director', 'analyst', 'consultant', 'specialist', 'coordinator', 'administrator', 'designer', 'intern'];
-
-                const isRoleTitle = (line: string) => {
-                    const lower = line.toLowerCase();
-                    return roleTitleKeywords.some(k => lower.includes(k)) && line.length < 80;
-                };
-
-                let currentRole: any = null;
-                let lastCompanyLine: string | null = null;
-
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (!line || !line.trim()) continue;
-
-                    const hasDateRange = dateRangeRegex.test(line);
-                    const looksLikeRoleTitle = isRoleTitle(line);
-
-                    // Check if this line starts a new entry (has date or is a role title)
-                    if (hasDateRange || looksLikeRoleTitle) {
-                        // Save previous role if exists
-                        if (currentRole) {
-                            experience.push(currentRole);
-                        }
-
-                        let title = "Unknown Role";
-                        let company = "Unknown Company";
-                        let startDate = "";
-                        let endDate = "";
-
-                        // Extract dates if present
-                        const dateMatch = line.match(dateRangeRegex);
-                        if (dateMatch) {
-                            startDate = dateMatch[1] || "";
-                            endDate = dateMatch[2] || "";
-                        }
-
-                        // Remove date string from line to get title/company
-                        const textWithoutDate = dateMatch ? line.replace(dateMatch[0], '').trim() : line;
-                        // Clean up parentheses that were part of date formatting
-                        const cleanedText = textWithoutDate.replace(/[()]+$/, '').replace(/^[()]+/, '').trim();
-
-                        if (looksLikeRoleTitle) {
-                            // This line is a role title
-                            title = cleanedText || line;
-                            // Look for company in previous line if it's not a role title and doesn't have dates
-                            if (i > 0 && lastCompanyLine) {
-                                company = lastCompanyLine;
-                            } else if (i > 0) {
-                                const prevLine = lines[i - 1];
-                                if (prevLine && !isRoleTitle(prevLine) && !dateRangeRegex.test(prevLine)) {
-                                    company = prevLine;
-                                }
-                            }
-                        } else if (hasDateRange && cleanedText.length > 5) {
-                            // Line has dates and other text - could be "Company 2015 - Present" or "Role 2020 - 2023"
-                            if (isRoleTitle(cleanedText)) {
-                                title = cleanedText;
-                                if (lastCompanyLine) company = lastCompanyLine;
-                            } else {
-                                // Assume it's a company line with dates
-                                company = cleanedText;
-                                // Check next line for role title
-                                if (i + 1 < lines.length && isRoleTitle(lines[i + 1])) {
-                                    // Skip processing this as a full entry, save company for next iteration
-                                    lastCompanyLine = cleanedText;
-                                    currentRole = null;
-                                    continue;
-                                }
-                            }
-                        }
-
-                        currentRole = {
-                            title: title.trim(),
-                            company: company.trim(),
-                            startDate,
-                            endDate,
-                            description: ""
-                        };
-                        lastCompanyLine = null; // Reset
-
-                    } else {
-                        // This line is either a company name or description
-                        // Check if it looks like a company name (short, possibly with location)
-                        const looksLikeCompany = line.length < 80 && !line.startsWith('•') && !line.startsWith('-') &&
-                            (line.includes('(') || line.includes('Inc') || line.includes('LLC') ||
-                                line.includes('Corp') || line.includes('Department') || line.includes('Agency') ||
-                                line.includes('U.S.') || line.includes('University'));
-
-                        if (looksLikeCompany && !currentRole) {
-                            // Save as potential company for the next role
-                            lastCompanyLine = line;
-                        } else if (currentRole) {
-                            // It's description text - preserve as bullet points
-                            // Check if line already starts with a bullet marker
-                            const hasBullet = /^[•\-\*\u2022\u25E6\u25AA]/.test(line);
-                            if (hasBullet) {
-                                currentRole.description += line + "\n";
-                            } else if (line.length > 10) {
-                                // Add bullet for substantial description lines
-                                currentRole.description += "• " + line + "\n";
-                            }
-                        }
-                    }
-                }
-
-                // Push last role
-                if (currentRole) {
-                    experience.push(currentRole);
-                }
-            } else if (section.name === 'education') {
-                // Heuristic Parsing for Education
-                const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-                // Keywords for Degrees
-                const degreeKeywords = ['bachelor', 'master', 'phd', 'b.s.', 'b.a.', 'm.s.', 'm.a.', 'mba', 'associate', 'degree', 'computer science', 'bba'];
-
-                // Date extraction pattern
-                const monthPattern = "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
-                const eduDateRangeRegex = new RegExp(`(${monthPattern}\\s*\\d{4}|\\d{4})\\s*[-–to]+\\s*(${monthPattern}\\s*\\d{4}|\\d{4}|Present)`, 'i');
-
-                let currentEdu: any = null;
-
-                for (const line of lines) {
-                    const lower = line.toLowerCase();
-                    // If line contains degree keyword, it's likely a degree or same block
-                    const hasDegree = degreeKeywords.some(k => lower.includes(k));
-
-                    if (hasDegree) {
-                        // Extract dates FIRST before stripping them
-                        let startDate = "";
-                        let endDate = "";
-                        const dateMatch = line.match(eduDateRangeRegex);
-                        if (dateMatch) {
-                            startDate = dateMatch[1] || "";
-                            endDate = dateMatch[2] || "";
-                        }
-
-                        // Now strip date-like patterns for degree/institution extraction
-                        const dateRangePattern = /\|?\s*(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)?\s*\d{4}\s*[-–to]*\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)?\s*\d{4}|Present)?/gi;
-
-                        let cleanedLine = line.replace(dateRangePattern, '').trim();
-                        cleanedLine = cleanedLine.replace(/\b\d{4}\b/g, '').trim();
-                        cleanedLine = cleanedLine.replace(/(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)/gi, '').trim();
-
-                        // Split to find degree and institution
-                        const separators = [/ – /, / - /, /,/];
-                        let parsedDegree = cleanedLine;
-                        let parsedInstitution = "University (Parsed)";
-
-                        for (const sep of separators) {
-                            const parts = cleanedLine.split(sep).map(p => p.trim()).filter(p => p.length > 0);
-                            if (parts.length > 1) {
-                                const degreePartIndex = parts.findIndex(p => degreeKeywords.some(k => p.toLowerCase().includes(k)));
-                                if (degreePartIndex !== -1) {
-                                    parsedDegree = parts[degreePartIndex].trim();
-                                    parsedInstitution = parts.filter((_, i) => i !== degreePartIndex).join(', ').trim();
-                                    parsedInstitution = parsedInstitution.replace(/[|–-]+/g, '').replace(/\s{2,}/g, ' ').trim();
-                                    parsedInstitution = parsedInstitution.replace(/^[,\s]+|[,\s]+$/g, '').trim();
-                                    break;
-                                }
-                            }
-                        }
-
-                        parsedDegree = parsedDegree.replace(/[|]+/g, '').trim();
-
-                        if (currentEdu) education.push(currentEdu);
-
-                        currentEdu = {
-                            institution: parsedInstitution,
-                            degree: parsedDegree,
-                            startDate,
-                            endDate
-                        };
-                    } else if (currentEdu) {
-                        // Ignore additional description lines for education
-                    } else {
-                        currentEdu = {
-                            institution: line,
-                            degree: "Degree Unknown",
-                            startDate: "",
-                            endDate: ""
-                        };
-                    }
-                }
-                if (currentEdu) education.push(currentEdu);
-
-            } else if (section.name === 'skills') {
-                // Skills Heuristic: Strict Filtering
-
-                const KNOWN_SKILLS = new Set([
-                    // Languages
-                    'javascript', 'typescript', 'python', 'java', 'c++', 'c#', 'ruby', 'go', 'golang', 'rust', 'swift', 'kotlin', 'php', 'html', 'css', 'sql', 'nosql', 'bash', 'shell',
-                    // Frontend
-                    'react', 'reactjs', 'vue', 'vuejs', 'angular', 'svelte', 'next.js', 'nuxt', 'redux', 'mobx', 'tailwind', 'sass', 'less', 'webpack', 'vite', 'graphql',
-                    // Backend
-                    'node', 'nodejs', 'express', 'nestjs', 'django', 'flask', 'fastapi', 'rails', 'spring', 'spring boot', '.net', 'asp.net',
-                    // Data / Cloud / Tools
-                    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'git', 'github', 'gitlab', 'jira', 'confluence', 'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch', 'kafka', 'tensorflow', 'pytorch', 'pandas', 'numpy', 'scikit-learn',
-                    // Concepts
-                    'rest', 'api', 'ci/cd', 'agile', 'scrum', 'oop', 'mvc', 'microservices', 'serverless'
-                ]);
-
-                const STOP_PHRASES = [
-                    'skills', 'experience', 'working', 'knowledge', 'proficient', 'familiar', 'technologies', 'tools', 'languages', 'frameworks',
-                    'solutions', 'scalable', 'complicated', 'simple', 'clean', 'efficient', 'maintainable', 'robust'
-                ];
-
-                // Split by common separators
-                // \n, ",", "•", "|", "·"
-                const rawTokens = content.split(/[\n,•|·]/);
-
-                const validSkills = new Set<string>();
-
-                for (const token of rawTokens) {
-                    const cleanToken = token.trim();
-                    const lowerToken = cleanToken.toLowerCase();
-
-                    // 1. Hard Rejects
-                    if (cleanToken.length < 2) continue; // "C" is rare alone, usually "C++" which is > 2, but "R" exists. Heuristic: Skip 1 char for now unless specific whitelist.
-                    if (cleanToken.length > 30) continue; // Too long -> Sentence
-
-                    // Email/Phone/Zip Check (Basic)
-                    if (/@/.test(cleanToken)) continue; // Email
-                    if (/\d{3}[-.]?\d{3}[-.]?\d{4}/.test(cleanToken)) continue; // Phone
-                    if (/\b\d{5}\b/.test(cleanToken)) continue; // Zip code like 75089
-                    if (/^\d+$/.test(cleanToken)) continue; // Just numbers
-
-                    // 2. Stop Phrase Check
-                    if (STOP_PHRASES.some(stop => lowerToken.includes(stop))) continue;
-
-                    // 3. Whitelist Check (Prioritize)
-                    if (KNOWN_SKILLS.has(lowerToken)) {
-                        validSkills.add(cleanToken);
-                        continue;
-                    }
-                }
-
-                skills.push(...Array.from(validSkills));
-            } else if (section.name === 'projects') {
-                // Heuristic Parsing for Projects
-                const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-                // Project name patterns: Short lines, possibly with links, or lines before bullet points
-                let currentProject: any = null;
-
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-
-                    // Check if line looks like a project title (short, no bullet, not a description)
-                    const isBullet = /^[•\-\*]/.test(line);
-                    const isShortTitle = line.length < 60 && !isBullet;
-                    const hasLink = line.includes('http') || line.includes('github');
-
-                    if (isShortTitle && !isBullet) {
-                        // Likely a project title
-                        if (currentProject) {
-                            projects.push(currentProject);
-                        }
-                        currentProject = {
-                            name: line,
-                            description: "",
-                            technologies: []
-                        };
-                    } else if (currentProject) {
-                        // It's a description line
-                        const hasBullet = /^[•\-\*]/.test(line);
-                        if (hasBullet) {
-                            currentProject.description += line + "\n";
-                        } else if (line.length > 10) {
-                            currentProject.description += "• " + line + "\n";
-                        }
-                    }
-                }
-                if (currentProject) {
-                    projects.push(currentProject);
-                }
-            }
+        // Log what data is being returned for debugging
+        Logger.info('[Resume Parse] Returning data:', {
+            hasContact: !!parsedData.contact,
+            contactName: `${parsedData.contact?.firstName || ''} ${parsedData.contact?.lastName || ''}`.trim() || 'N/A',
+            hasSummary: !!parsedData.summary,
+            experienceCount: parsedData.experience?.length || 0,
+            educationCount: parsedData.education?.length || 0,
+            skillsCount: parsedData.skills?.length || 0,
+            projectsCount: parsedData.projects?.length || 0,
         });
 
-        res.json({
-            contact: {
-                firstName,
-                lastName,
-                email,
-                phone
-            },
-            experience,
-            education,
-            skills,
-            projects
-        });
+        res.json(parsedData);
 
     } catch (error) {
         Logger.error('API Error: POST /api/resume/parse', error);
         res.status(500).json({ error: 'Failed to parse resume' });
+    }
+});
+
+// Import AI Resume Service
+import AIResumeService from './modules/resume/ai-service.js';
+
+// POST /api/resume/enhance-bullet
+// Enhances a single bullet point using AI
+app.post('/api/resume/enhance-bullet', async (req, res) => {
+    try {
+        const { bullet, context } = req.body;
+
+        Logger.info(`[API] Enhance bullet request. Length: ${bullet?.length}, Context: ${!!context}`);
+
+        if (!bullet || typeof bullet !== 'string') {
+            res.status(400).json({ error: 'Missing or invalid bullet parameter' });
+            return;
+        }
+
+        const enhanced = await AIResumeService.enhanceBullet(bullet, context);
+        res.json({ original: bullet, enhanced });
+
+    } catch (error) {
+        Logger.error('API Error: POST /api/resume/enhance-bullet', error);
+        res.status(500).json({ error: 'Failed to enhance bullet point' });
+    }
+});
+
+// POST /api/resume/tailor
+// Tailors resume bullets for a specific job description
+app.post('/api/resume/tailor', async (req, res) => {
+    try {
+        const { jobDescription, bullets, skills } = req.body;
+
+        if (!jobDescription || typeof jobDescription !== 'string') {
+            res.status(400).json({ error: 'Missing or invalid jobDescription parameter' });
+            return;
+        }
+
+        // Get job fit analysis
+        const analysis = await AIResumeService.analyzeJobFit(
+            jobDescription,
+            bullets || [],
+            skills || []
+        );
+
+        // Optionally tailor bullets if provided
+        let tailoredBullets: string[] = [];
+        if (bullets && bullets.length > 0) {
+            tailoredBullets = await AIResumeService.tailorBullets(jobDescription, bullets);
+        }
+
+        res.json({
+            analysis,
+            tailoredBullets
+        });
+
+    } catch (error) {
+        Logger.error('API Error: POST /api/resume/tailor', error);
+        res.status(500).json({ error: 'Failed to tailor resume' });
     }
 });
 

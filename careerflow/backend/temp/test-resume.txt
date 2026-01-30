@@ -1,0 +1,48 @@
+JOHN DEVELOPER
+john.developer@email.com | (555) 123-4567 | San Francisco, CA
+linkedin.com/in/johndeveloper | github.com/johndeveloper
+
+PROFESSIONAL SUMMARY
+Passionate full-stack engineer with 8+ years of experience building scalable web applications. Expert in React, Node.js, and cloud architecture. Led cross-functional teams to deliver products used by millions of users. Strong advocate for clean code and test-driven development.
+
+EXPERIENCE
+
+Senior Software Engineer
+TechCorp Inc., San Francisco, CA
+January 2020 - Present
+• Architected and built microservices platform serving 10M+ daily users
+• Led team of 5 engineers to deliver new payment processing system
+• Reduced API response times by 60% through caching strategies
+• Mentored junior developers and established coding standards
+
+Software Engineer
+StartupXYZ, Austin, TX
+June 2017 - December 2019
+• Built React frontend for B2B SaaS product with 500+ enterprise clients
+• Implemented GraphQL API reducing frontend data fetching complexity
+• Set up CI/CD pipeline with GitHub Actions and AWS
+
+Junior Developer
+WebAgency LLC, Seattle, WA
+August 2015 - May 2017
+• Developed responsive websites for Fortune 500 clients
+• Created reusable component library used across 20+ projects
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University of Washington, Seattle, WA
+2011 - 2015
+
+SKILLS
+JavaScript, TypeScript, React, Node.js, Python, PostgreSQL, MongoDB, AWS, Docker, Kubernetes, GraphQL, REST APIs
+
+PROJECTS
+
+Personal Finance Tracker
+A React Native app helping users track expenses and budgets
+Technologies: React Native, Firebase, Redux
+
+Open Source CLI Tool
+Command-line tool for automating development workflows
+Technologies: Node.js, TypeScript, npm

@@ -1,11 +1,78 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { UserProfile } from '../types.js';
+import { UserProfile, ResumeProfile, RESUME_PROFILE_MAX_LENGTH, RESUME_PROFILE_MAX_COUNT, RESUME_PROFILE_NAME_REGEX } from '../types.js';
 import Logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+export interface ProfileValidationError {
+    field: string;
+    message: string;
+}
+
+/**
+ * Validates resume profile names and count
+ */
+export function validateResumeProfiles(profiles: ResumeProfile[]): ProfileValidationError[] {
+    const errors: ProfileValidationError[] = [];
+    
+    // Check max count
+    if (profiles.length > RESUME_PROFILE_MAX_COUNT) {
+        errors.push({
+            field: 'resumeProfiles',
+            message: `Maximum of ${RESUME_PROFILE_MAX_COUNT} resume profiles allowed`,
+        });
+    }
+    
+    // Validate each profile
+    const seenNames = new Set<string>();
+    profiles.forEach((profile, index) => {
+        // Check name format
+        if (!profile.name) {
+            errors.push({
+                field: `resumeProfiles[${index}].name`,
+                message: 'Profile name is required',
+            });
+        } else {
+            // Check length
+            if (profile.name.length > RESUME_PROFILE_MAX_LENGTH) {
+                errors.push({
+                    field: `resumeProfiles[${index}].name`,
+                    message: `Profile name cannot exceed ${RESUME_PROFILE_MAX_LENGTH} characters`,
+                });
+            }
+            
+            // Check format
+            if (!RESUME_PROFILE_NAME_REGEX.test(profile.name)) {
+                errors.push({
+                    field: `resumeProfiles[${index}].name`,
+                    message: 'Profile name must be lowercase letters separated by dashes',
+                });
+            }
+            
+            // Check uniqueness
+            if (seenNames.has(profile.name)) {
+                errors.push({
+                    field: `resumeProfiles[${index}].name`,
+                    message: 'Profile name must be unique',
+                });
+            }
+            seenNames.add(profile.name);
+        }
+        
+        // Validate required fields
+        if (!profile.id) {
+            errors.push({
+                field: `resumeProfiles[${index}].id`,
+                message: 'Profile ID is required',
+            });
+        }
+    });
+    
+    return errors;
+}
 
 class ProfileService {
     private profile: UserProfile | null = null;
@@ -52,12 +119,15 @@ class ProfileService {
     private getDefaultProfile(): UserProfile {
         return {
             contact: {
-                firstName: 'Candidate',
-                lastName: 'User',
-                email: 'candidate@example.com',
-                phone: '000-000-0000',
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
                 linkedin: '',
-                location: 'Remote'
+                location: '',
+                role: '',
+                company: '',
+                bio: ''
             },
             experience: [],
             education: [],
@@ -67,7 +137,8 @@ class ProfileService {
                 maxSeniority: [],
                 locations: []
             },
-            skills: []
+            skills: [],
+            resumeProfiles: []
         };
     }
 }

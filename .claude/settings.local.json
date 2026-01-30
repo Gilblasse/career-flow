@@ -10,7 +10,10 @@
       "Bash(rd /s /q \"c:\\\\Users\\\\EmmanuelBlasse\\\\source\\\\Personal\\\\AntiGravity\\\\Job Apply - Copy\\\\careerflow\\\\backend\\\\node_modules\\\\.cache\")",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(python:*)",
+      "Bash(tree:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }

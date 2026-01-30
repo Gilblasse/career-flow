@@ -1,5 +1,22 @@
 export type ATSProvider = 'greenhouse' | 'lever' | 'ashby';
 
+// Resume Profile validation constants
+export const RESUME_PROFILE_MAX_LENGTH = 34;
+export const RESUME_PROFILE_MAX_COUNT = 5;
+export const RESUME_PROFILE_NAME_REGEX = /^[a-z]+(-[a-z]+)*$/;
+
+export interface ResumeProfile {
+    id: string;
+    name: string; // lowercase, dash-separated, max 34 chars (e.g., "software-engineering")
+    resumeSnapshot: {
+        experience: Experience[];
+        education: Education[];
+        skills: string[];
+    };
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface RawJob {
     company: string;
     title: string;
@@ -27,6 +44,7 @@ export interface Experience {
     endDate?: string;
     current?: boolean;
     description: string;
+    bullets?: string[];
 }
 
 export interface Education {
@@ -49,6 +67,9 @@ export interface UserProfile {
         github?: string;
         portfolio?: string;
         location: string;
+        role?: string;     // Current job title
+        company?: string;  // Current company
+        bio?: string;      // Professional summary
     };
     experience: Experience[];
     education: Education[];
@@ -60,4 +81,6 @@ export interface UserProfile {
         minSalary?: number;
     };
     skills: string[];
+    resumeProfiles: ResumeProfile[];
+    lastEditedProfileId?: string;
 }

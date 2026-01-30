@@ -1,4 +1,4 @@
-import { Home, FileUser, FileText, KanbanSquare, LifeBuoy, Settings } from 'lucide-react';
+import { Home, FileUser, FileText, KanbanSquare, LifeBuoy, Settings, User } from 'lucide-react';
 
 interface SidebarProps {
     currentView: string;
@@ -8,6 +8,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
     const menuItems = [
         { name: 'Dashboard', icon: <Home size={20} />, id: 'dashboard' },
+        { name: 'Profile', icon: <User size={20} />, id: 'profile' },
         { name: 'Resume', icon: <FileUser size={20} />, id: 'resume' },
         { name: 'Cover letter', icon: <FileText size={20} />, id: 'cover-letter' },
         { name: 'Application Process', icon: <KanbanSquare size={20} />, id: 'kanban' },

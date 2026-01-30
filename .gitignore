@@ -8,3 +8,4 @@ Thumbs.db
 coverage/
 .npm/
 *.log
+nul

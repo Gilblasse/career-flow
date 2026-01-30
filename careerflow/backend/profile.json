@@ -1,41 +1,172 @@
 {
     "contact": {
-        "firstName": "Emmanuel",
+        "firstName": "Ivery",
         "lastName": "Blasse",
-        "email": "emmanuel.blasse@example.com",
-        "phone": "+1-555-010-5555",
-        "linkedin": "https://linkedin.com/in/emmanuelblasse",
-        "github": "https://github.com/emmanuelblasse",
-        "portfolio": "https://emmanuelblasse.com",
-        "location": "San Francisco, CA"
+        "email": "vrgilchrist@gmail.com",
+        "phone": "",
+        "linkedin": "",
+        "location": "Poughkeepsie, NY",
+        "portfolio": "",
+        "role": "Remote Accounting & Data Entry Support",
+        "company": "Independent Contractor",
+        "bio": "Detail-oriented accounting and operations professional with extensive experience in data entry, recordkeeping, and financial data validation. Skilled in cleaning, categorizing, and maintaining large datasets with high accuracy. Strong background in payroll, tax allocations, and reconciliations, combined with excellent organizational skills and the ability to handle repetitive tasks while meeting deadlines."
     },
+    "experience": [
+        {
+            "title": "Remote Accounting & Data Entry Support",
+            "company": "Independent Contractor",
+            "location": "Remote",
+            "startDate": "2022",
+            "endDate": "Present",
+            "current": false,
+            "description": "- Entered and validated large volumes of financial data including payroll, invoices, and multi-state tax allocations.\n- Cleaned and reconciled datasets to ensure compliance with New York and Connecticut tax regulations.\n- Identified inconsistencies and errors, corrected records, and ensured accuracy in reporting.\n- Maintained organized spreadsheets and reports to support audits and ongoing operations.",
+            "bullets": [
+                "Drove accurate entry and validation of over 10,000 financial records, including payroll and invoices, ensuring compliance with multi-state tax regulations.",
+                "Cleaned and reconciled datasets to ensure compliance with New York and Connecticut tax regulations.",
+                "Identified inconsistencies and errors, corrected records, and ensured accuracy in reporting.",
+                "Maintained organized spreadsheets and reports to support audits and ongoing operations."
+            ]
+        },
+        {
+            "title": "Accounting Clerk",
+            "company": "Local Businesses",
+            "location": "",
+            "startDate": "2018",
+            "endDate": "2021",
+            "current": false,
+            "description": "- Performed high-volume data entry for AP/AR, vendor records, and reconciliations.\n- Organized and categorized financial records for reporting and compliance.\n- Supported month-end closings by validating ledger entries and cleaning mismatched data.\n- Collaborated with team members to improve data entry workflows.",
+            "bullets": [
+                "Performed high-volume data entry for AP/AR, vendor records, and reconciliations.",
+                "Organized and categorized financial records for reporting and compliance.",
+                "Supported month-end closings by validating ledger entries and cleaning mismatched data.",
+                "Collaborated with team members to improve data entry workflows."
+            ]
+        },
+        {
+            "title": "Administrative & Data Entry Assistant",
+            "company": "/",
+            "location": "",
+            "startDate": "2016",
+            "endDate": "2018",
+            "current": false,
+            "description": "- Entered and updated client information into internal databases with strict attention to detail.\n- Coded, labeled, and categorized documents for filing and retrieval.\n- Managed repetitive clerical tasks including invoice entry, payroll logs, and financial tracking.\n- Reported anomalies or errors in documentation to supervisors.",
+            "bullets": [
+                "Entered and updated client information into internal databases with strict attention to detail.",
+                "Coded, labeled, and categorized documents for filing and retrieval.",
+                "Managed repetitive clerical tasks including invoice entry, payroll logs, and financial tracking.",
+                "Reported anomalies or errors in documentation to supervisors."
+            ]
+        }
+    ],
+    "education": [
+        {
+            "institution": "",
+            "degree": "Bachelor’s Degree – Accounting & Business Administration",
+            "fieldOfStudy": "",
+            "startDate": "",
+            "endDate": "",
+            "description": ""
+        }
+    ],
     "preferences": {
-        "remoteOnly": true,
-        "excludedKeywords": [
-            "Java",
-            ".NET",
-            "C#",
-            "Azure"
-        ],
-        "maxSeniority": [
-            "Principal",
-            "Staff",
-            "Director",
-            "VP"
-        ],
-        "locations": [
-            "San Francisco, CA",
-            "New York, NY"
-        ],
-        "minSalary": 150000
+        "remoteOnly": false,
+        "excludedKeywords": [],
+        "maxSeniority": [],
+        "locations": []
     },
     "skills": [
-        "TypeScript",
-        "React",
-        "Node.js",
-        "Python",
-        "AWS",
-        "PostgreSQL",
-        "GraphQL"
-    ]
+        "Data Entry & Data Cleaning",
+        "Record Labeling & Categorization",
+        "Payroll & Multi-State Tax Allocation",
+        "Spreadsheet Management (Excel, Google Sheets)",
+        "Database Maintenance & Accuracy",
+        "Quality Assurance & Compliance",
+        "Strong Organizational & Communication Skills"
+    ],
+    "resumeProfiles": [
+        {
+            "id": "f0bf7115-9d83-4368-a11f-e0a0117737af",
+            "name": "default",
+            "resumeSnapshot": {
+                "experience": [
+                    {
+                        "title": "Remote Accounting & Data Entry Support",
+                        "company": "Independent Contractor",
+                        "location": "Remote",
+                        "startDate": "2022",
+                        "endDate": "Present",
+                        "current": false,
+                        "description": "- Entered and validated large volumes of financial data including payroll, invoices, and multi-state tax allocations.\n- Cleaned and reconciled datasets to ensure compliance with New York and Connecticut tax regulations.\n- Identified inconsistencies and errors, corrected records, and ensured accuracy in reporting.\n- Maintained organized spreadsheets and reports to support audits and ongoing operations.",
+                        "bullets": [
+                            "Drove accurate entry and validation of over 10,000 financial records, including payroll and invoices, ensuring compliance with multi-state tax regulations.",
+                            "Cleaned and reconciled datasets to ensure compliance with New York and Connecticut tax regulations.",
+                            "Identified inconsistencies and errors, corrected records, and ensured accuracy in reporting.",
+                            "Maintained organized spreadsheets and reports to support audits and ongoing operations."
+                        ]
+                    },
+                    {
+                        "title": "Accounting Clerk",
+                        "company": "Local Businesses",
+                        "location": "",
+                        "startDate": "2018",
+                        "endDate": "2021",
+                        "current": false,
+                        "description": "- Performed high-volume data entry for AP/AR, vendor records, and reconciliations.\n- Organized and categorized financial records for reporting and compliance.\n- Supported month-end closings by validating ledger entries and cleaning mismatched data.\n- Collaborated with team members to improve data entry workflows.",
+                        "bullets": [
+                            "Performed high-volume data entry for AP/AR, vendor records, and reconciliations.",
+                            "Organized and categorized financial records for reporting and compliance.",
+                            "Supported month-end closings by validating ledger entries and cleaning mismatched data.",
+                            "Collaborated with team members to improve data entry workflows."
+                        ]
+                    },
+                    {
+                        "title": "Administrative & Data Entry Assistant",
+                        "company": "/",
+                        "location": "",
+                        "startDate": "2016",
+                        "endDate": "2018",
+                        "current": false,
+                        "description": "- Entered and updated client information into internal databases with strict attention to detail.\n- Coded, labeled, and categorized documents for filing and retrieval.\n- Managed repetitive clerical tasks including invoice entry, payroll logs, and financial tracking.\n- Reported anomalies or errors in documentation to supervisors.",
+                        "bullets": [
+                            "Entered and updated client information into internal databases with strict attention to detail.",
+                            "Coded, labeled, and categorized documents for filing and retrieval.",
+                            "Managed repetitive clerical tasks including invoice entry, payroll logs, and financial tracking.",
+                            "Reported anomalies or errors in documentation to supervisors."
+                        ]
+                    }
+                ],
+                "education": [
+                    {
+                        "institution": "",
+                        "degree": "Bachelor’s Degree – Accounting & Business Administration",
+                        "fieldOfStudy": "",
+                        "startDate": "",
+                        "endDate": "",
+                        "description": ""
+                    }
+                ],
+                "skills": [
+                    "Data Entry & Data Cleaning",
+                    "Record Labeling & Categorization",
+                    "Payroll & Multi-State Tax Allocation",
+                    "Spreadsheet Management (Excel, Google Sheets)",
+                    "Database Maintenance & Accuracy",
+                    "Quality Assurance & Compliance",
+                    "Strong Organizational & Communication Skills"
+                ]
+            },
+            "createdAt": "2026-01-30T05:41:55.696Z",
+            "updatedAt": "2026-01-30T05:42:51.056Z"
+        }
+    ],
+    "lastEditedProfileId": "f0bf7115-9d83-4368-a11f-e0a0117737af",
+    "selfIdentification": {
+        "gender": "",
+        "veteranStatus": "",
+        "disabilityStatus": "",
+        "ethnicity": ""
+    },
+    "projects": [],
+    "certifications": [],
+    "accomplishments": []
 }
