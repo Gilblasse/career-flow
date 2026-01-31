@@ -13,16 +13,23 @@ import {
     Mail, Phone, MapPin, Calendar, Building2, Minus, AlertTriangle, Bookmark
 } from 'lucide-react';
 
-// Import design system
+// Import shadcn/ui components
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
-    colors,
-    radius,
-    card,
-    button,
-    input,
-    modal,
-    tab,
-} from '../../styles';
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 interface ResumePageProps {
     onNavigate?: (view: string, data?: any) => void;
@@ -502,72 +509,44 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
         onNavigate?.('dashboard');
     };
 
-    // --- Styles (using design system) ---
-    const styles = {
-        card: card.base,
-        input: input.base,
-        primaryButton: button.primary,
-        secondaryButton: button.secondary,
-        ghostButton: button.ghost,
-        tab: tab.item,
-    };
-
     // Check if we should show the upload view (no profile OR no experiences)
     const hasExperiences = profile?.experiences && profile.experiences.length > 0;
 
     // --- Upload View ---
     if (!profile || !hasExperiences) {
         return (
-            <div style={{ maxWidth: '800px', margin: '0 auto', padding: '60px 24px' }}>
+            <div className="max-w-[800px] mx-auto py-14 px-6">
                 {/* Back Button */}
                 {onNavigate && (
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={handleBack}
-                        style={{
-                            ...styles.ghostButton,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            color: colors.text.muted,
-                            padding: '8px 12px',
-                            borderRadius: radius.lg,
-                            marginBottom: '16px',
-                        }}
+                        className="mb-4 gap-1.5 text-muted-foreground"
                     >
-                        <ArrowLeft size={18} />
-                        <span style={{ fontSize: '14px' }}>Back</span>
-                    </button>
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="text-sm">Back</span>
+                    </Button>
                 )}
 
                 {/* Header */}
-                <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-                    <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                        marginBottom: '20px',
-                        boxShadow: '0 10px 40px -10px rgba(79, 70, 229, 0.5)',
-                    }}>
-                        <FileText size={28} color="white" />
+                <div className="text-center mb-12">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-violet-500 mb-5 shadow-lg shadow-primary/30">
+                        <FileText className="h-7 w-7 text-white" />
                     </div>
-                    <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>
+                    <h1 className="text-2xl font-bold text-foreground mb-2">
                         Resume Builder
                     </h1>
-                    <p style={{ fontSize: '16px', color: '#6B7280', maxWidth: '400px', margin: '0 auto' }}>
+                    <p className="text-base text-muted-foreground max-w-[400px] mx-auto">
                         Upload your resume to extract and enhance your professional experience
                     </p>
                 </div>
 
                 {/* Progress Steps */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '40px' }}>
+                <div className="flex justify-center gap-2 mb-10">
                     {[
-                        { step: 1, label: 'Upload', icon: <FileUp size={16} />, key: 'idle' },
-                        { step: 2, label: 'Parse', icon: <Zap size={16} />, key: 'parsing' },
-                        { step: 3, label: 'Edit', icon: <Edit3 size={16} />, key: 'done' },
+                        { step: 1, label: 'Upload', icon: <FileUp className="h-4 w-4" />, key: 'idle' },
+                        { step: 2, label: 'Parse', icon: <Zap className="h-4 w-4" />, key: 'parsing' },
+                        { step: 3, label: 'Edit', icon: <Edit3 className="h-4 w-4" />, key: 'done' },
                     ].map((item, i) => {
                         const isActive = (uploadStep === 'idle' && item.key === 'idle') ||
                             (uploadStep === 'selected' && item.key === 'idle') ||
@@ -578,30 +557,20 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
 
                         return (
                             <React.Fragment key={item.step}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '8px 16px',
-                                    borderRadius: '100px',
-                                    backgroundColor: isComplete ? '#ECFDF5' : isActive ? '#EEF2FF' : '#F9FAFB',
-                                    color: isComplete ? '#059669' : isActive ? '#4F46E5' : '#9CA3AF',
-                                    fontWeight: '500',
-                                    fontSize: '13px',
-                                    transition: 'all 0.3s ease',
-                                }}>
-                                    {isComplete ? <CheckCircle size={16} /> : item.icon}
+                                <div className={cn(
+                                    "flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all",
+                                    isComplete && "bg-emerald-50 text-emerald-600",
+                                    isActive && !isComplete && "bg-primary/10 text-primary",
+                                    !isActive && !isComplete && "bg-muted text-muted-foreground"
+                                )}>
+                                    {isComplete ? <CheckCircle className="h-4 w-4" /> : item.icon}
                                     {item.label}
                                 </div>
                                 {i < 2 && (
-                                    <div style={{
-                                        width: '32px',
-                                        height: '2px',
-                                        backgroundColor: isComplete ? '#10B981' : '#E5E7EB',
-                                        alignSelf: 'center',
-                                        borderRadius: '1px',
-                                        transition: 'background-color 0.3s ease',
-                                    }} />
+                                    <div className={cn(
+                                        "w-8 h-0.5 self-center rounded-sm transition-colors",
+                                        isComplete ? "bg-emerald-500" : "bg-border"
+                                    )} />
                                 )}
                             </React.Fragment>
                         );
@@ -610,162 +579,115 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
 
                 {/* Upload Card */}
                 {!parsedData ? (
-                    <div
+                    <Card
                         onDragEnter={handleDrag}
                         onDragLeave={handleDrag}
                         onDragOver={handleDrag}
                         onDrop={handleDrop}
-                        style={{
-                            ...styles.card,
-                            padding: '48px',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            border: dragActive ? '2px dashed #4F46E5' : file ? '2px solid #10B981' : '2px dashed #E5E7EB',
-                            backgroundColor: dragActive ? '#F5F3FF' : file ? '#F0FDF4' : 'white',
-                            transition: 'all 0.2s ease',
-                        }}
+                        className={cn(
+                            "p-12 text-center cursor-pointer relative transition-all border-2 border-dashed",
+                            dragActive && "border-primary bg-primary/5",
+                            file && !dragActive && "border-emerald-500 border-solid bg-emerald-50",
+                            !dragActive && !file && "border-border bg-background"
+                        )}
                     >
                         <input
                             type="file"
                             onChange={handleFileChange}
                             accept=".pdf,.doc,.docx"
-                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
 
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '16px',
-                        }}>
-                            <div style={{
-                                width: '72px',
-                                height: '72px',
-                                borderRadius: '50%',
-                                backgroundColor: file ? '#ECFDF5' : '#EEF2FF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                            }}>
+                        <div className="flex flex-col items-center gap-4">
+                            <div className={cn(
+                                "w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all",
+                                file ? "bg-emerald-100" : "bg-primary/10"
+                            )}>
                                 {file ? (
-                                    <CheckCircle size={32} color="#10B981" />
+                                    <CheckCircle className="h-8 w-8 text-emerald-500" />
                                 ) : (
-                                    <UploadCloud size={32} color="#4F46E5" />
+                                    <UploadCloud className="h-8 w-8 text-primary" />
                                 )}
                             </div>
 
                             {file ? (
                                 <>
                                     <div>
-                                        <p style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>
+                                        <p className="text-base font-semibold text-foreground mb-1">
                                             {file.name}
                                         </p>
-                                        <p style={{ fontSize: '13px', color: '#6B7280' }}>
+                                        <p className="text-[13px] text-muted-foreground">
                                             {(file.size / 1024).toFixed(1)} KB
                                         </p>
                                     </div>
-                                    <button
+                                    <Button
                                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleParse(); }}
                                         disabled={isUploading}
-                                        style={{
-                                            ...styles.primaryButton,
-                                            opacity: isUploading ? 0.7 : 1,
-                                            pointerEvents: isUploading ? 'none' : 'auto',
-                                            position: 'relative',
-                                            zIndex: 10,
-                                        }}
+                                        className="relative z-10 gap-2"
                                     >
                                         {isUploading ? (
                                             <>
-                                                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                                                <Loader2 className="h-4 w-4 animate-spin" />
                                                 Parsing...
                                             </>
                                         ) : (
                                             <>
-                                                <Sparkles size={18} />
+                                                <Sparkles className="h-4 w-4" />
                                                 Extract Resume Data
-                                                <ArrowRight size={16} />
+                                                <ArrowRight className="h-4 w-4" />
                                             </>
                                         )}
-                                    </button>
+                                    </Button>
                                 </>
                             ) : (
                                 <>
                                     <div>
-                                        <p style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>
+                                        <p className="text-base font-semibold text-foreground mb-1">
                                             Drop your resume here
                                         </p>
-                                        <p style={{ fontSize: '14px', color: '#6B7280' }}>
-                                            or <span style={{ color: '#4F46E5', fontWeight: '500' }}>browse files</span>
+                                        <p className="text-sm text-muted-foreground">
+                                            or <span className="text-primary font-medium">browse files</span>
                                         </p>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                    <div className="flex gap-3 mt-2">
                                         {['PDF', 'DOC', 'DOCX'].map((type) => (
-                                            <span key={type} style={{
-                                                padding: '4px 12px',
-                                                backgroundColor: '#F3F4F6',
-                                                borderRadius: '6px',
-                                                fontSize: '12px',
-                                                fontWeight: '500',
-                                                color: '#6B7280',
-                                            }}>
+                                            <Badge key={type} variant="secondary" className="text-xs font-medium">
                                                 {type}
-                                            </span>
+                                            </Badge>
                                         ))}
                                     </div>
                                 </>
                             )}
                         </div>
-                    </div>
+                    </Card>
                 ) : (
-                    <div style={{ ...styles.card, textAlign: 'center', padding: '48px' }}>
-                        <div style={{
-                            width: '72px',
-                            height: '72px',
-                            borderRadius: '50%',
-                            backgroundColor: '#ECFDF5',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 20px',
-                        }}>
-                            <CheckCircle size={36} color="#10B981" />
+                    <Card className="text-center p-12">
+                        <div className="w-[72px] h-[72px] rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
+                            <CheckCircle className="h-9 w-9 text-emerald-500" />
                         </div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
                             Resume Parsed Successfully
                         </h3>
-                        <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                        <p className="text-sm text-muted-foreground mb-6">
                             We extracted {parsedData.experience?.length || 0} experiences and {parsedData.skills?.length || 0} skills
                         </p>
-                        <button
+                        <Button
                             onClick={() => {
                                 setProfile({ ...parsedData, experiences: parsedData.experience });
                                 setHasUnsavedChanges(true);
                             }}
-                            style={styles.primaryButton}
+                            className="gap-2"
                         >
                             Continue to Editor
-                            <ArrowRight size={16} />
-                        </button>
-                    </div>
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                    </Card>
                 )}
 
                 {/* Error Message */}
                 {error && (
-                    <div style={{
-                        marginTop: '16px',
-                        padding: '12px 16px',
-                        backgroundColor: '#FEF2F2',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        color: '#DC2626',
-                        fontSize: '14px',
-                    }}>
-                        <AlertCircle size={18} />
+                    <div className="mt-4 p-3 bg-destructive/10 rounded-lg flex items-center gap-2.5 text-destructive text-sm">
+                        <AlertCircle className="h-4 w-4" />
                         {error}
                     </div>
                 )}
@@ -775,179 +697,141 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
 
     // --- Editor View ---
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', maxWidth: '1400px', margin: '0 auto', padding: '24px', height: 'calc(100vh - 80px)' }}>
+        <div className="grid grid-cols-2 gap-8 max-w-[1400px] mx-auto p-6 h-[calc(100vh-80px)]">
 
             {/* LEFT: Editor Column */}
-            <div style={{ overflowY: 'auto', paddingRight: '8px' }}>
+            <div className="overflow-y-auto pr-2">
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-start gap-4">
                         {/* Back Button */}
                         {onNavigate && (
-                            <button
+                            <Button
+                                variant="ghost"
                                 onClick={handleBack}
-                                style={{
-                                    ...styles.ghostButton,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    color: colors.text.muted,
-                                    padding: '8px 12px',
-                                    borderRadius: radius.lg,
-                                    marginTop: '2px',
-                                }}
+                                className="mt-0.5 gap-1.5 text-muted-foreground"
                             >
-                                <ArrowLeft size={18} />
-                                <span style={{ fontSize: '14px' }}>Back</span>
-                            </button>
+                                <ArrowLeft className="h-4 w-4" />
+                                <span className="text-sm">Back</span>
+                            </Button>
                         )}
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                                <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: 0 }}>Resume Context</h1>
-                            {hasUnsavedChanges && (
-                                <span style={{
-                                    fontSize: '11px',
-                                    fontWeight: '500',
-                                    color: '#F59E0B',
-                                    backgroundColor: '#FFFBEB',
-                                    padding: '2px 8px',
-                                    borderRadius: '4px',
-                                    border: '1px solid #FEF3C7',
-                                }}>Unsaved</span>
-                            )}
-                        </div>
-                            <p style={{ color: '#6B7280', fontSize: '14px', margin: 0 }}>Enrich your experiences to generate tailored resumes</p>
+                            <div className="flex items-center gap-3 mb-1">
+                                <h1 className="text-xl font-bold text-foreground">Resume Context</h1>
+                                {hasUnsavedChanges && (
+                                    <Badge variant="outline" className="text-amber-600 bg-amber-50 border-amber-200">
+                                        Unsaved
+                                    </Badge>
+                                )}
+                            </div>
+                            <p className="text-muted-foreground text-sm">Enrich your experiences to generate tailored resumes</p>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="flex items-center gap-2.5">
                         {/* Current Profile Badge */}
                         {currentProfileId && resumeProfiles.find(p => p.id === currentProfileId) && (
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '6px 12px',
-                                backgroundColor: colors.primary[50],
-                                border: `1px solid ${colors.primary[200]}`,
-                                borderRadius: radius.full,
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                color: colors.primary[700],
-                            }}>
-                                <Bookmark size={14} />
+                            <Badge variant="outline" className="gap-1.5 text-primary bg-primary/5 border-primary/20">
+                                <Bookmark className="h-3.5 w-3.5" />
                                 {resumeProfiles.find(p => p.id === currentProfileId)?.name}
-                            </div>
+                            </Badge>
                         )}
-                        <button
+                        <Button
+                            variant="outline"
                             onClick={handleSaveClick}
                             disabled={isSaving || !hasUnsavedChanges}
-                            style={{
-                                ...styles.secondaryButton,
-                                backgroundColor: hasUnsavedChanges ? '#ECFDF5' : '#F9FAFB',
-                                color: hasUnsavedChanges ? '#059669' : '#9CA3AF',
-                                opacity: (!hasUnsavedChanges || isSaving) ? 0.7 : 1,
-                                cursor: (!hasUnsavedChanges || isSaving) ? 'not-allowed' : 'pointer',
-                            }}
+                            className={cn(
+                                "gap-2",
+                                hasUnsavedChanges && "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
+                            )}
                         >
                             {isSaving ? (
-                                <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</>
+                                <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>
                             ) : (
-                                <><Save size={16} /> Save</>)}
-                        </button>
-                        <button onClick={() => setShowTailorModal(true)} style={styles.primaryButton}>
-                            <Target size={16} /> Tailor for Job
-                        </button>
+                                <><Save className="h-4 w-4" /> Save</>
+                            )}
+                        </Button>
+                        <Button onClick={() => setShowTailorModal(true)} className="gap-2">
+                            <Target className="h-4 w-4" /> Tailor for Job
+                        </Button>
                     </div>
                 </div>
 
                 {/* Experience Navigator */}
-                <div style={{ ...styles.card, marginBottom: '20px', padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <button
+                <Card className="mb-5 p-4">
+                    <div className="flex items-center justify-between">
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={goToPrev}
                             disabled={currentExpIndex === 0}
-                            style={{
-                                ...styles.ghostButton,
-                                opacity: currentExpIndex === 0 ? 0.4 : 1,
-                                cursor: currentExpIndex === 0 ? 'not-allowed' : 'pointer',
-                            }}
                         >
-                            <ChevronLeft size={20} />
-                        </button>
+                            <ChevronLeft className="h-5 w-5" />
+                        </Button>
 
-                        <div style={{ flex: 1, textAlign: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <Building2 size={16} color="#6B7280" />
-                                <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500' }}>
+                        <div className="flex-1 text-center">
+                            <div className="flex items-center justify-center gap-2 mb-1">
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground font-medium">
                                     {currentExpIndex + 1} of {profile.experiences?.length || 0}
                                 </span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0 }}>
+                            <div className="flex items-center justify-center gap-2">
+                                <h3 className="text-base font-semibold text-foreground">
                                     {currentExp?.title || 'No Title'}
                                 </h3>
-                                <button onClick={() => setShowJobEditModal(true)} style={{ ...styles.ghostButton, padding: '4px' }}>
-                                    <Edit3 size={14} />
-                                </button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowJobEditModal(true)}>
+                                    <Edit3 className="h-3.5 w-3.5" />
+                                </Button>
                             </div>
-                            <p style={{ fontSize: '13px', color: '#6B7280', margin: '2px 0 0' }}>{currentExp?.company || 'No Company'}</p>
+                            <p className="text-[13px] text-muted-foreground mt-0.5">{currentExp?.company || 'No Company'}</p>
                         </div>
 
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={goToNext}
                             disabled={!profile.experiences || currentExpIndex === profile.experiences.length - 1}
-                            style={{
-                                ...styles.ghostButton,
-                                opacity: (!profile.experiences || currentExpIndex === profile.experiences.length - 1) ? 0.4 : 1,
-                            }}
                         >
-                            <ChevronRight size={20} />
-                        </button>
+                            <ChevronRight className="h-5 w-5" />
+                        </Button>
                     </div>
 
                     {/* Progress dots */}
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '12px' }}>
+                    <div className="flex justify-center gap-1.5 mt-3">
                         {profile.experiences?.map((_: any, i: number) => (
                             <button
                                 key={i}
                                 onClick={() => setCurrentExpIndex(i)}
-                                style={{
-                                    width: i === currentExpIndex ? '20px' : '8px',
-                                    height: '8px',
-                                    borderRadius: '4px',
-                                    backgroundColor: i === currentExpIndex ? '#4F46E5' : '#E5E7EB',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                }}
+                                className={cn(
+                                    "h-2 rounded-full border-0 cursor-pointer transition-all",
+                                    i === currentExpIndex ? "w-5 bg-primary" : "w-2 bg-border hover:bg-muted-foreground/30"
+                                )}
                             />
                         ))}
                     </div>
-                </div>
+                </Card>
 
                 {/* Editor Tabs */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', backgroundColor: '#F9FAFB', padding: '6px', borderRadius: '12px' }}>
+                <div className="flex gap-2 mb-4 bg-muted p-1.5 rounded-xl">
                     {[
-                        { id: 'bullets' as const, label: 'Bullets', icon: <FileText size={14} /> },
-                        { id: 'achievements' as const, label: 'Achievements', icon: <Award size={14} /> },
-                        { id: 'skills' as const, label: 'Skills', icon: <Zap size={14} /> },
+                        { id: 'bullets' as const, label: 'Bullets', icon: <FileText className="h-3.5 w-3.5" /> },
+                        { id: 'achievements' as const, label: 'Achievements', icon: <Award className="h-3.5 w-3.5" /> },
+                        { id: 'skills' as const, label: 'Skills', icon: <Zap className="h-3.5 w-3.5" /> },
                         // Only show Description tab if description is a paragraph (not bullet-formatted)
                         // and there are no explicit bullet points already
                         ...((currentExp?.description && isDescriptionParagraph(currentExp.description) && (!currentExp?.bullets || currentExp.bullets.length === 0))
-                            ? [{ id: 'context' as const, label: 'Description', icon: <FileText size={14} /> }]
+                            ? [{ id: 'context' as const, label: 'Description', icon: <FileText className="h-3.5 w-3.5" /> }]
                             : []),
                     ].map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveEditorTab(tab.id)}
-                            style={{
-                                ...styles.tab(activeEditorTab === tab.id),
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                            }}
+                            className={cn(
+                                "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all",
+                                activeEditorTab === tab.id
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
                         >
                             {tab.icon}
                             {tab.label}
@@ -956,12 +840,12 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
                 </div>
 
                 {/* Tab Content */}
-                <div style={styles.card}>
+                <Card className="p-5">
                     {activeEditorTab === 'bullets' && (
                         <>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <input
+                            <div className="flex flex-col gap-2 mb-5">
+                                <div className="flex gap-2.5">
+                                    <Input
                                         value={newBullet}
                                         onChange={(e) => setNewBullet(e.target.value)}
                                         onKeyDown={(e) => {
@@ -970,31 +854,27 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
                                             }
                                         }}
                                         placeholder="Add a bullet point describing your work..."
-                                        style={{ ...styles.input, flex: 1 }}
+                                        className="flex-1"
                                         disabled={(currentExp?.bullets || []).length >= 13}
                                     />
-                                    <button
+                                    <Button
                                         onClick={addBullet}
                                         disabled={(currentExp?.bullets || []).length >= 13}
-                                        style={{
-                                            ...styles.primaryButton,
-                                            opacity: (currentExp?.bullets || []).length >= 13 ? 0.5 : 1,
-                                            cursor: (currentExp?.bullets || []).length >= 13 ? 'not-allowed' : 'pointer',
-                                        }}
+                                        className="gap-1.5"
                                     >
-                                        <Plus size={16} /> Add
-                                    </button>
+                                        <Plus className="h-4 w-4" /> Add
+                                    </Button>
                                 </div>
                                 {(currentExp?.bullets || []).length >= 13 && (
-                                    <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                                    <span className="text-xs text-muted-foreground">
                                         Maximum of 13 bullets reached
                                     </span>
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div className="flex flex-col gap-3">
                                 {(currentExp?.bullets || []).length === 0 ? (
-                                    <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '32px 0', fontStyle: 'italic' }}>
+                                    <p className="text-center text-muted-foreground py-8 italic">
                                         No bullet points yet. Add your responsibilities and achievements.
                                     </p>
                                 ) : (
@@ -1007,62 +887,48 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
                                             onDragLeave={handleBulletDragLeave}
                                             onDrop={(e) => handleBulletDrop(e, i)}
                                             onDragEnd={handleBulletDragEnd}
-                                            style={{
-                                                display: 'flex',
-                                                gap: '12px',
-                                                alignItems: 'flex-start',
-                                                padding: '12px',
-                                                backgroundColor: draggedBulletIndex === i ? '#E0E7FF' : dragOverBulletIndex === i ? '#EEF2FF' : '#F9FAFB',
-                                                borderRadius: '10px',
-                                                border: dragOverBulletIndex === i ? '2px dashed #4F46E5' : '1px solid #F3F4F6',
-                                                opacity: draggedBulletIndex === i ? 0.5 : 1,
-                                                cursor: 'grab',
-                                                transition: 'all 0.15s ease',
-                                            }}
+                                            className={cn(
+                                                "flex gap-3 items-start p-3 rounded-lg transition-all cursor-grab",
+                                                draggedBulletIndex === i && "bg-primary/20 opacity-50",
+                                                dragOverBulletIndex === i && "bg-primary/10 border-2 border-dashed border-primary",
+                                                draggedBulletIndex !== i && dragOverBulletIndex !== i && "bg-muted border border-border"
+                                            )}
                                         >
                                             <div
-                                                style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    gap: '2px',
-                                                    cursor: 'grab',
-                                                    color: '#9CA3AF',
-                                                    paddingTop: '4px',
-                                                }}
+                                                className="flex flex-col items-center gap-0.5 cursor-grab text-muted-foreground pt-1"
                                                 title="Drag to reorder"
                                             >
-                                                <GripVertical size={16} />
+                                                <GripVertical className="h-4 w-4" />
                                             </div>
-                                            <textarea
+                                            <Textarea
                                                 value={bullet}
                                                 onChange={(e) => updateBullet(i, e.target.value)}
                                                 rows={2}
-                                                style={{ ...styles.input, flex: 1, resize: 'vertical', minHeight: '60px', border: 'none', backgroundColor: 'transparent', padding: '0' }}
+                                                className="flex-1 resize-y min-h-[60px] border-0 bg-transparent p-0 focus-visible:ring-0"
                                             />
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <button
+                                            <div className="flex flex-col gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     onClick={() => enhanceBulletWithAI(i, bullet)}
                                                     title="Enhance with AI"
                                                     disabled={enhancingBulletIndex === i}
-                                                    style={{
-                                                        ...styles.ghostButton,
-                                                        backgroundColor: '#F5F3FF',
-                                                        color: '#7C3AED',
-                                                    }}
+                                                    className="h-8 w-8 bg-violet-50 text-violet-600 hover:bg-violet-100"
                                                 >
                                                     {enhancingBulletIndex === i ? (
-                                                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
                                                     ) : (
-                                                        <Sparkles size={16} />
+                                                        <Sparkles className="h-4 w-4" />
                                                     )}
-                                                </button>
-                                                <button
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     onClick={() => removeBullet(i)}
-                                                    style={{ ...styles.ghostButton, backgroundColor: '#FEF2F2', color: '#EF4444' }}
+                                                    className="h-8 w-8 bg-destructive/10 text-destructive hover:bg-destructive/20"
                                                 >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         </div>
                                     ))
@@ -1073,43 +939,37 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
 
                     {activeEditorTab === 'achievements' && (
                         <>
-                            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                                <input
+                            <div className="flex gap-2.5 mb-5">
+                                <Input
                                     value={newAchievement}
                                     onChange={(e) => setNewAchievement(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && addAchievement()}
                                     placeholder="Add an achievement (promotions, awards, metrics)..."
-                                    style={{ ...styles.input, flex: 1 }}
+                                    className="flex-1"
                                 />
-                                <button onClick={addAchievement} style={{ ...styles.primaryButton, backgroundColor: '#F59E0B' }}>
-                                    <Plus size={16} /> Add
-                                </button>
+                                <Button onClick={addAchievement} className="gap-1.5 bg-amber-500 hover:bg-amber-600">
+                                    <Plus className="h-4 w-4" /> Add
+                                </Button>
                             </div>
 
                             {(currentExp?.achievements || []).length === 0 ? (
-                                <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '32px 0', fontStyle: 'italic' }}>
+                                <p className="text-center text-muted-foreground py-8 italic">
                                     No achievements yet. Add promotions, awards, or quantifiable wins.
                                 </p>
                             ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div className="flex flex-col gap-2.5">
                                     {currentExp.achievements.map((ach: string, i: number) => (
-                                        <div key={i} style={{
-                                            display: 'flex',
-                                            gap: '12px',
-                                            alignItems: 'center',
-                                            padding: '12px 16px',
-                                            backgroundColor: '#FFFBEB',
-                                            borderRadius: '10px',
-                                            border: '1px solid #FEF3C7',
-                                        }}>
-                                            <Award size={18} color="#F59E0B" />
-                                            <span style={{ flex: 1, fontSize: '14px', color: '#92400E' }}>{ach}</span>
-                                            <button
+                                        <div key={i} className="flex gap-3 items-center px-4 py-3 bg-amber-50 rounded-lg border border-amber-200">
+                                            <Award className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                                            <span className="flex-1 text-sm text-amber-800">{ach}</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 onClick={() => removeAchievement(i)}
-                                                style={{ ...styles.ghostButton, color: '#9CA3AF' }}
+                                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
                                             >
-                                                <Trash2 size={14} />
-                                            </button>
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
                                         </div>
                                     ))}
                                 </div>
@@ -1119,34 +979,26 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
 
                     {activeEditorTab === 'context' && (
                         <>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                marginBottom: '12px',
-                                padding: '8px 12px',
-                                backgroundColor: '#EEF2FF',
-                                borderRadius: '8px',
-                            }}>
-                                <Lightbulb size={16} color="#4F46E5" />
-                                <span style={{ fontSize: '13px', color: '#4F46E5', fontWeight: '500' }}>
+                            <div className="flex items-center gap-2 mb-3 p-2 bg-primary/10 rounded-lg">
+                                <Lightbulb className="h-4 w-4 text-primary" />
+                                <span className="text-[13px] text-primary font-medium">
                                     Standard description (shown if no bullet points) & AI Context
                                 </span>
                             </div>
-                            <textarea
+                            <Textarea
                                 value={currentExp?.description || ''}
                                 onChange={(e) => updateExperience('description', e.target.value)}
                                 placeholder="E.g., Technically challenging project, strict deadline, used AWS and React, led a team of 5..."
                                 rows={6}
-                                style={{ ...styles.input, resize: 'vertical' }}
+                                className="resize-y"
                             />
                         </>
                     )}
 
                     {activeEditorTab === 'skills' && (
                         <>
-                            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                                <input
+                            <div className="flex gap-2.5 mb-5">
+                                <Input
                                     value={newSkill}
                                     onChange={(e) => setNewSkill(e.target.value)}
                                     onKeyDown={(e) => {
@@ -1160,9 +1012,9 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
                                         }
                                     }}
                                     placeholder="Add a skill (e.g., React, Python, Project Management)..."
-                                    style={{ ...styles.input, flex: 1 }}
+                                    className="flex-1"
                                 />
-                                <button
+                                <Button
                                     onClick={() => {
                                         if (!newSkill.trim()) return;
                                         const currentSkills = profile.skills || [];
@@ -1172,273 +1024,206 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
                                         }
                                         setNewSkill('');
                                     }}
-                                    style={{ ...styles.primaryButton, backgroundColor: '#10B981' }}
+                                    className="gap-1.5 bg-emerald-500 hover:bg-emerald-600"
                                 >
-                                    <Plus size={16} /> Add
-                                </button>
+                                    <Plus className="h-4 w-4" /> Add
+                                </Button>
                             </div>
 
                             {(!profile.skills || profile.skills.length === 0) ? (
-                                <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '32px 0', fontStyle: 'italic' }}>
+                                <p className="text-center text-muted-foreground py-8 italic">
                                     No skills yet. Add skills that will appear on your resume.
                                 </p>
                             ) : (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                <div className="flex flex-wrap gap-2">
                                     {profile.skills.map((skill: string, i: number) => (
-                                        <div key={i} style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            padding: '8px 12px',
-                                            backgroundColor: '#ECFDF5',
-                                            borderRadius: '20px',
-                                            border: '1px solid #D1FAE5',
-                                        }}>
-                                            <span style={{ fontSize: '13px', fontWeight: '500', color: '#065F46' }}>{skill}</span>
+                                        <Badge
+                                            key={i}
+                                            variant="secondary"
+                                            className="gap-2 py-1.5 px-3 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                                        >
+                                            <span className="text-[13px] font-medium">{skill}</span>
                                             <button
                                                 onClick={() => {
                                                     const newSkills = profile.skills.filter((_: string, idx: number) => idx !== i);
                                                     setProfile({ ...profile, skills: newSkills });
                                                     setHasUnsavedChanges(true);
                                                 }}
-                                                style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    padding: '2px',
-                                                    cursor: 'pointer',
-                                                    color: '#059669',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                }}
+                                                className="hover:text-destructive transition-colors"
                                             >
-                                                <X size={14} />
+                                                <X className="h-3.5 w-3.5" />
                                             </button>
-                                        </div>
+                                        </Badge>
                                     ))}
                                 </div>
                             )}
                         </>
                     )}
-                </div>
+                </Card>
 
                 {/* Job Edit Modal */}
-                {showJobEditModal && (
-                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                        <div style={{ ...styles.card, width: '90%', maxWidth: '500px', padding: '24px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>Edit Job Details</h3>
-                                <button onClick={() => setShowJobEditModal(false)} style={styles.ghostButton}>
-                                    <X size={20} />
-                                </button>
-                            </div>
+                <Dialog open={showJobEditModal} onOpenChange={setShowJobEditModal}>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>Edit Job Details</DialogTitle>
+                        </DialogHeader>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <div>
-                                    <label style={{ fontSize: '13px', fontWeight: '500', color: '#374151', display: 'block', marginBottom: '6px' }}>Job Title</label>
-                                    <input value={currentExp?.title || ''} onChange={(e) => updateExperience('title', e.target.value)} style={styles.input} />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '13px', fontWeight: '500', color: '#374151', display: 'block', marginBottom: '6px' }}>Company</label>
-                                    <input value={currentExp?.company || ''} onChange={(e) => updateExperience('company', e.target.value)} style={styles.input} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '13px', fontWeight: '500', color: '#374151', display: 'block', marginBottom: '6px' }}>Start Date</label>
-                                        <input value={currentExp?.startDate || ''} onChange={(e) => updateExperience('startDate', e.target.value)} style={styles.input} placeholder="Jan 2020" />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '13px', fontWeight: '500', color: '#374151', display: 'block', marginBottom: '6px' }}>End Date</label>
-                                        <input value={currentExp?.endDate || ''} onChange={(e) => updateExperience('endDate', e.target.value)} style={styles.input} placeholder="Present" />
-                                    </div>
-                                </div>
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <Label className="text-[13px] font-medium mb-1.5 block">Job Title</Label>
+                                <Input value={currentExp?.title || ''} onChange={(e) => updateExperience('title', e.target.value)} />
                             </div>
-
-                            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={addExperience} style={{ ...styles.secondaryButton, backgroundColor: '#ECFDF5', color: '#059669' }}>
-                                        <Plus size={14} /> Add Job
-                                    </button>
-                                    <button onClick={removeExperience} disabled={profile.experiences?.length <= 1} style={{ ...styles.secondaryButton, backgroundColor: '#FEF2F2', color: '#DC2626', opacity: profile.experiences?.length <= 1 ? 0.5 : 1 }}>
-                                        <Trash2 size={14} /> Remove
-                                    </button>
+                            <div>
+                                <Label className="text-[13px] font-medium mb-1.5 block">Company</Label>
+                                <Input value={currentExp?.company || ''} onChange={(e) => updateExperience('company', e.target.value)} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-[13px] font-medium mb-1.5 block">Start Date</Label>
+                                    <Input value={currentExp?.startDate || ''} onChange={(e) => updateExperience('startDate', e.target.value)} placeholder="Jan 2020" />
                                 </div>
-                                <button onClick={() => setShowJobEditModal(false)} style={styles.primaryButton}>
-                                    Done
-                                </button>
+                                <div>
+                                    <Label className="text-[13px] font-medium mb-1.5 block">End Date</Label>
+                                    <Input value={currentExp?.endDate || ''} onChange={(e) => updateExperience('endDate', e.target.value)} placeholder="Present" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+
+                        <DialogFooter className="mt-6 pt-4 border-t flex justify-between sm:justify-between">
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={addExperience} className="gap-1.5 bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100">
+                                    <Plus className="h-3.5 w-3.5" /> Add Job
+                                </Button>
+                                <Button variant="outline" onClick={removeExperience} disabled={profile.experiences?.length <= 1} className="gap-1.5 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
+                                    <Trash2 className="h-3.5 w-3.5" /> Remove
+                                </Button>
+                            </div>
+                            <Button onClick={() => setShowJobEditModal(false)}>
+                                Done
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
                 {/* Tailor Modal */}
-                {showTailorModal && (
-                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                        <div style={{ ...styles.card, width: '90%', maxWidth: '600px', padding: '24px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '10px',
-                                        background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}>
-                                        <Target size={20} color="white" />
-                                    </div>
-                                    <div>
-                                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>Tailor for Job</h3>
-                                        <p style={{ fontSize: '13px', color: '#6B7280', margin: 0 }}>Optimize your resume for a specific position</p>
-                                    </div>
+                <Dialog open={showTailorModal} onOpenChange={setShowTailorModal}>
+                    <DialogContent className="sm:max-w-[600px]">
+                        <DialogHeader>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                                    <Target className="h-5 w-5 text-white" />
                                 </div>
-                                <button onClick={() => setShowTailorModal(false)} style={styles.ghostButton}>
-                                    <X size={20} />
-                                </button>
+                                <div>
+                                    <DialogTitle>Tailor for Job</DialogTitle>
+                                    <DialogDescription>Optimize your resume for a specific position</DialogDescription>
+                                </div>
                             </div>
+                        </DialogHeader>
 
-                            <textarea
-                                value={jobDescription}
-                                onChange={(e) => setJobDescription(e.target.value)}
-                                placeholder="Paste the job description here..."
-                                rows={10}
-                                style={{ ...styles.input, resize: 'vertical', marginBottom: '20px' }}
-                            />
+                        <Textarea
+                            value={jobDescription}
+                            onChange={(e) => setJobDescription(e.target.value)}
+                            placeholder="Paste the job description here..."
+                            rows={10}
+                            className="resize-y mb-5"
+                        />
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                                <button onClick={() => setShowTailorModal(false)} style={styles.secondaryButton}>
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleTailorResume}
-                                    disabled={isTailoring || !jobDescription}
-                                    style={{ ...styles.primaryButton, opacity: (isTailoring || !jobDescription) ? 0.6 : 1 }}
-                                >
-                                    {isTailoring ? (
-                                        <>
-                                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                                            Analyzing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles size={16} />
-                                            Tailor My Resume
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                        <DialogFooter className="gap-3">
+                            <Button variant="outline" onClick={() => setShowTailorModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleTailorResume}
+                                disabled={isTailoring || !jobDescription}
+                                className="gap-2"
+                            >
+                                {isTailoring ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Analyzing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="h-4 w-4" />
+                                        Tailor My Resume
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* RIGHT: Live Preview */}
-            <div style={{
-                backgroundColor: '#F3F4F6',
-                borderRadius: '16px',
-                padding: '32px',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-            }}>
+            <div className="bg-muted rounded-2xl p-8 overflow-y-auto flex flex-col">
                 {/* Preview Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Eye size={18} color="#6B7280" />
-                            <span style={{ fontSize: '14px', fontWeight: '500', color: '#6B7280' }}>Live Preview</span>
+                <div className="flex justify-between items-center mb-5">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium text-muted-foreground">Live Preview</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '12px', color: '#9CA3AF' }}>Preview bullets</span>
-                            <button
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">Preview bullets</span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
                                 onClick={() => setPreviewBulletCount(Math.max(2, previewBulletCount - 1))}
                                 disabled={previewBulletCount <= 2}
-                                style={{
-                                    ...styles.ghostButton,
-                                    padding: '4px',
-                                    opacity: previewBulletCount <= 2 ? 0.4 : 1,
-                                    cursor: previewBulletCount <= 2 ? 'not-allowed' : 'pointer',
-                                }}
                             >
-                                <Minus size={14} />
-                            </button>
-                            <span style={{
-                                minWidth: '24px',
-                                textAlign: 'center',
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                color: '#6B7280',
-                                backgroundColor: '#E5E7EB',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                            }}>
+                                <Minus className="h-3.5 w-3.5" />
+                            </Button>
+                            <span className="min-w-[24px] text-center text-[13px] font-medium text-muted-foreground bg-border px-2 py-0.5 rounded">
                                 {previewBulletCount}
                             </span>
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
                                 onClick={() => setPreviewBulletCount(Math.min(13, previewBulletCount + 1))}
                                 disabled={previewBulletCount >= 13}
-                                style={{
-                                    ...styles.ghostButton,
-                                    padding: '4px',
-                                    opacity: previewBulletCount >= 13 ? 0.4 : 1,
-                                    cursor: previewBulletCount >= 13 ? 'not-allowed' : 'pointer',
-                                }}
                             >
-                                <Plus size={14} />
-                            </button>
+                                <Plus className="h-3.5 w-3.5" />
+                            </Button>
                         </div>
                     </div>
-                    <button style={styles.secondaryButton} onClick={handleExportPDF}>
-                        <Download size={14} /> Export PDF
-                    </button>
+                    <Button variant="outline" onClick={handleExportPDF} className="gap-2">
+                        <Download className="h-3.5 w-3.5" /> Export PDF
+                    </Button>
                 </div>
 
                 {/* Resume Preview - Scrollable with page sizing */}
-                <div style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '24px',
-                    paddingBottom: '24px',
-                }}>
+                <div className="flex-1 overflow-y-auto flex flex-col gap-6 pb-6">
                     {/* Resume Page(s) Container */}
-                    <div ref={resumeRef} style={{
-                        backgroundColor: 'white',
-                        borderRadius: '4px',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)',
-                        padding: '48px',
-                        minHeight: '1056px', /* Letter size height at 96dpi */
-                        fontFamily: "'Inter', sans-serif",
-                        position: 'relative',
-                    }}>
+                    <div ref={resumeRef} className="bg-white rounded shadow-lg p-12 min-h-[1056px] font-sans relative">
                         {/* Resume Header */}
-                        <div style={{ marginBottom: '28px', paddingBottom: '20px', borderBottom: '2px solid #111827', breakInside: 'avoid' }}>
-                            <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#111827', letterSpacing: '-0.02em', margin: '0 0 8px' }}>
+                        <div className="mb-7 pb-5 border-b-2 border-foreground" style={{ breakInside: 'avoid' }}>
+                            <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">
                                 {profile.contact?.firstName || 'Your'} {profile.contact?.lastName || 'Name'}
                             </h1>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '13px', color: '#4B5563' }}>
+                            <div className="flex flex-wrap gap-4 text-[13px] text-gray-600">
                                 {profile.contact?.email && (
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <Mail size={12} />
+                                    <span className="flex items-center gap-1.5">
+                                        <Mail className="h-3 w-3" />
                                         {profile.contact.email}
                                     </span>
                                 )}
                                 {profile.contact?.phone && (
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <Phone size={12} />
+                                    <span className="flex items-center gap-1.5">
+                                        <Phone className="h-3 w-3" />
                                         {profile.contact.phone}
                                     </span>
                                 )}
                                 {profile.contact?.location && (
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <MapPin size={12} />
+                                    <span className="flex items-center gap-1.5">
+                                        <MapPin className="h-3 w-3" />
                                         {profile.contact.location}
                                     </span>
                                 )}
                                 {profile.contact?.linkedin && (
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <Link2 size={12} />
+                                    <span className="flex items-center gap-1.5">
+                                        <Link2 className="h-3 w-3" />
                                         {profile.contact.linkedin}
                                     </span>
                                 )}
@@ -1446,212 +1231,131 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
                         </div>
 
                         {/* Professional Experience */}
-                        <div style={{ marginBottom: '24px', breakInside: 'avoid-column' }}>
-                        <h2 style={{ fontSize: '13px', fontWeight: '700', color: '#111827', textTransform: 'uppercase', letterSpacing: '0.1em', borderBottom: '1px solid #E5E7EB', paddingBottom: '6px', marginBottom: '16px' }}>
-                            Professional Experience
-                        </h2>
-                        {profile.experiences?.map((exp: any, i: number) => (
-                            <div key={i} style={{ marginBottom: '18px', breakInside: 'avoid' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
-                                    <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: 0 }}>{exp.title}</h3>
-                                    <span style={{ fontSize: '12px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <Calendar size={10} />
-                                        {exp.startDate} – {exp.endDate || 'Present'}
-                                    </span>
-                                </div>
-                                <p style={{ fontSize: '13px', color: '#4B5563', fontStyle: 'italic', margin: '0 0 8px' }}>{exp.company}</p>
-
-                                {exp.bullets && exp.bullets.length > 0 ? (
-                                    <div style={{ marginTop: '6px' }}>
-                                        {exp.bullets.slice(0, previewBulletCount).map((bullet: string, j: number) => (
-                                            <div key={j} style={{
-                                                fontSize: '12px',
-                                                color: '#374151',
-                                                lineHeight: '1.7',
-                                                marginBottom: '4px',
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: '8px',
-                                            }}>
-                                                <span style={{ color: '#6B7280' }}>•</span>
-                                                <span>{bullet}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    exp.description && (
-                                        <div style={{ marginTop: '6px' }}>
-                                            {exp.description.split('\n')
-                                                .map((line: string) => line.replace(/^[-–•]\s*/, '').trim())
-                                                .filter((line: string) => line.length > 0)
-                                                .slice(0, previewBulletCount)
-                                                .map((line: string, j: number) => (
-                                                    <div key={j} style={{
-                                                        fontSize: '12px',
-                                                        color: '#374151',
-                                                        lineHeight: '1.7',
-                                                        marginBottom: '4px',
-                                                        display: 'flex',
-                                                        alignItems: 'flex-start',
-                                                        gap: '8px',
-                                                    }}>
-                                                        <span style={{ color: '#6B7280' }}>•</span>
-                                                        <span>{line}</span>
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Education */}
-                    {profile.education && profile.education.length > 0 && (
-                        <div style={{ marginBottom: '24px', breakInside: 'avoid-column' }}>
-                            <h2 style={{ fontSize: '13px', fontWeight: '700', color: '#111827', textTransform: 'uppercase', letterSpacing: '0.1em', borderBottom: '1px solid #E5E7EB', paddingBottom: '6px', marginBottom: '16px' }}>
-                                Education
+                        <div className="mb-6" style={{ breakInside: 'avoid-column' }}>
+                            <h2 className="text-[13px] font-bold text-foreground uppercase tracking-widest border-b border-border pb-1.5 mb-4">
+                                Professional Experience
                             </h2>
-                            {profile.education.map((edu: any, i: number) => (
-                                <div key={i} style={{ marginBottom: '12px', breakInside: 'avoid' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                        <h3 style={{ fontSize: '13px', fontWeight: '400', color: '#111827', margin: 0 }}>
-                                            <span style={{ fontWeight: '700' }}>{edu.degree}</span>{edu.fieldOfStudy ? ` – ${edu.fieldOfStudy}` : ''}
-                                        </h3>
-                                        {(edu.startDate || edu.endDate) && (
-                                            <span style={{ fontSize: '12px', color: '#6B7280' }}>
-                                                {edu.startDate}{edu.startDate && edu.endDate ? ' – ' : ''}{edu.endDate}
-                                            </span>
-                                        )}
+                            {profile.experiences?.map((exp: any, i: number) => (
+                                <div key={i} className="mb-4" style={{ breakInside: 'avoid' }}>
+                                    <div className="flex justify-between items-baseline mb-0.5">
+                                        <h3 className="text-sm font-semibold text-foreground">{exp.title}</h3>
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Calendar className="h-2.5 w-2.5" />
+                                            {exp.startDate} – {exp.endDate || 'Present'}
+                                        </span>
                                     </div>
-                                    {edu.institution && (
-                                        <p style={{ fontSize: '12px', color: '#4B5563', fontStyle: 'italic', margin: '2px 0 0' }}>{edu.institution}</p>
+                                    <p className="text-[13px] text-gray-600 italic mb-2">{exp.company}</p>
+
+                                    {exp.bullets && exp.bullets.length > 0 ? (
+                                        <div className="mt-1.5">
+                                            {exp.bullets.slice(0, previewBulletCount).map((bullet: string, j: number) => (
+                                                <div key={j} className="text-xs text-gray-700 leading-relaxed mb-1 flex items-start gap-2">
+                                                    <span className="text-muted-foreground">•</span>
+                                                    <span>{bullet}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        exp.description && (
+                                            <div className="mt-1.5">
+                                                {exp.description.split('\n')
+                                                    .map((line: string) => line.replace(/^[-–•]\s*/, '').trim())
+                                                    .filter((line: string) => line.length > 0)
+                                                    .slice(0, previewBulletCount)
+                                                    .map((line: string, j: number) => (
+                                                        <div key={j} className="text-xs text-gray-700 leading-relaxed mb-1 flex items-start gap-2">
+                                                            <span className="text-muted-foreground">•</span>
+                                                            <span>{line}</span>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             ))}
                         </div>
-                    )}
 
-                    {/* Skills */}
-                    {profile.skills && profile.skills.length > 0 && (
-                        <div style={{ breakInside: 'avoid-column' }}>
-                            <h2 style={{ fontSize: '13px', fontWeight: '700', color: '#111827', textTransform: 'uppercase', letterSpacing: '0.1em', borderBottom: '1px solid #E5E7EB', paddingBottom: '6px', marginBottom: '12px' }}>
-                                Skills
-                            </h2>
-                            <p style={{ fontSize: '12px', color: '#374151', lineHeight: '1.7' }}>
-                                {profile.skills.join(' • ')}
-                            </p>
-                        </div>
-                    )}
+                        {/* Education */}
+                        {profile.education && profile.education.length > 0 && (
+                            <div className="mb-6" style={{ breakInside: 'avoid-column' }}>
+                                <h2 className="text-[13px] font-bold text-foreground uppercase tracking-widest border-b border-border pb-1.5 mb-4">
+                                    Education
+                                </h2>
+                                {profile.education.map((edu: any, i: number) => (
+                                    <div key={i} className="mb-3" style={{ breakInside: 'avoid' }}>
+                                        <div className="flex justify-between items-baseline">
+                                            <h3 className="text-[13px] text-foreground">
+                                                <span className="font-bold">{edu.degree}</span>{edu.fieldOfStudy ? ` – ${edu.fieldOfStudy}` : ''}
+                                            </h3>
+                                            {(edu.startDate || edu.endDate) && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    {edu.startDate}{edu.startDate && edu.endDate ? ' – ' : ''}{edu.endDate}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {edu.institution && (
+                                            <p className="text-xs text-gray-600 italic mt-0.5">{edu.institution}</p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Skills */}
+                        {profile.skills && profile.skills.length > 0 && (
+                            <div style={{ breakInside: 'avoid-column' }}>
+                                <h2 className="text-[13px] font-bold text-foreground uppercase tracking-widest border-b border-border pb-1.5 mb-3">
+                                    Skills
+                                </h2>
+                                <p className="text-xs text-gray-700 leading-relaxed">
+                                    {profile.skills.join(' • ')}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* CSS Animation for spinner */}
-            <style>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
-
             {/* Unsaved Changes Confirmation Modal */}
-            {showUnsavedModal && (
-                <div
-                    style={modal.overlay}
-                    onClick={() => setShowUnsavedModal(false)}
-                >
-                    <div
-                        style={{
-                            ...modal.content,
-                            maxWidth: '420px',
-                            textAlign: 'center',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Warning Icon */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '16px',
-                            backgroundColor: '#FEF3C7',
-                            color: '#D97706',
-                            margin: '0 auto 20px',
-                        }}>
-                            <AlertTriangle size={28} />
-                        </div>
-
-                        {/* Title */}
-                        <h3 style={{
-                            fontSize: '18px',
-                            fontWeight: '600',
-                            color: '#111827',
-                            marginBottom: '8px',
-                        }}>
-                            Unsaved Changes
-                        </h3>
-
-                        {/* Description */}
-                        <p style={{
-                            color: '#6B7280',
-                            fontSize: '14px',
-                            margin: '0 0 24px 0',
-                            lineHeight: 1.6,
-                        }}>
-                            You have unsaved changes. Do you want to save them before leaving?
-                        </p>
-
-                        {/* Actions */}
-                        <div style={{
-                            display: 'flex',
-                            gap: '12px',
-                            justifyContent: 'center',
-                        }}>
-                            <button
-                                onClick={handleDiscardAndLeave}
-                                style={{
-                                    ...styles.ghostButton,
-                                    backgroundColor: '#FEE2E2',
-                                    color: '#DC2626',
-                                    padding: '10px 20px',
-                                    borderRadius: '8px',
-                                    fontWeight: '500',
-                                }}
-                            >
-                                Discard
-                            </button>
-                            <button
-                                onClick={() => setShowUnsavedModal(false)}
-                                style={{
-                                    ...styles.secondaryButton,
-                                    padding: '10px 20px',
-                                }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSaveAndLeave}
-                                disabled={isSaving}
-                                style={{
-                                    ...styles.primaryButton,
-                                    padding: '10px 20px',
-                                    opacity: isSaving ? 0.7 : 1,
-                                    cursor: isSaving ? 'not-allowed' : 'pointer',
-                                }}
-                            >
-                                {isSaving ? (
-                                    <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</>
-                                ) : (
-                                    'Save & Leave'
-                                )}
-                            </button>
-                        </div>
+            <Dialog open={showUnsavedModal} onOpenChange={setShowUnsavedModal}>
+                <DialogContent className="sm:max-w-[420px] text-center">
+                    {/* Warning Icon */}
+                    <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 mx-auto mb-5">
+                        <AlertTriangle className="h-7 w-7" />
                     </div>
-                </div>
-            )}
+
+                    <DialogHeader className="text-center">
+                        <DialogTitle className="text-lg font-semibold text-center">Unsaved Changes</DialogTitle>
+                        <DialogDescription className="text-sm text-center">
+                            You have unsaved changes. Do you want to save them before leaving?
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter className="flex gap-3 justify-center sm:justify-center mt-6">
+                        <Button
+                            variant="ghost"
+                            onClick={handleDiscardAndLeave}
+                            className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+                        >
+                            Discard
+                        </Button>
+                        <Button variant="outline" onClick={() => setShowUnsavedModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSaveAndLeave}
+                            disabled={isSaving}
+                            className="gap-2"
+                        >
+                            {isSaving ? (
+                                <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>
+                            ) : (
+                                'Save & Leave'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

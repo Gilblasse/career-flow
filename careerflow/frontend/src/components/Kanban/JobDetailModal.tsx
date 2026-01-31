@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, FileText, Image, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
-// Duplicate definition to avoid circular deps or complex refactoring for now
 import type { Task } from './types';
 
 interface JobDetailModalProps {
@@ -11,133 +14,109 @@ interface JobDetailModalProps {
 }
 
 const JobDetailModal: React.FC<JobDetailModalProps> = ({ task, onClose }) => {
-    const [activeTab, setActiveTab] = useState<'description' | 'application'>('description');
-
     return (
-        <AnimatePresence>
-            <div style={{
-                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }} onClick={onClose}>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    style={{
-                        backgroundColor: 'white', borderRadius: '16px', width: '800px', maxWidth: '95%',
-                        height: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-                    }}
-                    onClick={e => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <div style={{ padding: '24px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 gap-0">
+                {/* Header */}
+                <DialogHeader className="p-6 border-b">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-muted rounded-lg" />
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                <div style={{ width: '40px', height: '40px', backgroundColor: '#F3F4F6', borderRadius: '8px' }}></div>
-                                <div>
-                                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#111827' }}>{task.role}</h2>
-                                    <div style={{ fontSize: '16px', color: '#6B7280' }}>at <span style={{ fontWeight: '500', color: '#374151' }}>{task.company}</span></div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px' }}>
-                                <div style={{ fontSize: '13px', color: '#9CA3AF' }}>Applied on {task.date}</div>
-                            </div>
+                            <DialogTitle className="text-2xl">{task.role}</DialogTitle>
+                            <p className="text-muted-foreground">
+                                at <span className="font-medium text-foreground">{task.company}</span>
+                            </p>
                         </div>
-                        <button onClick={onClose} style={{ padding: '8px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '50%' }} className="hover:bg-gray-100">
-                            <X size={24} color="#6B7280" />
-                        </button>
                     </div>
+                    <p className="text-sm text-muted-foreground mt-3">Applied on {task.date}</p>
+                </DialogHeader>
 
-                    {/* Tabs */}
-                    <div style={{ display: 'flex', borderBottom: '1px solid #E5E7EB', padding: '0 24px' }}>
-                        <button
-                            onClick={() => setActiveTab('description')}
-                            style={{
-                                padding: '16px 24px', background: 'transparent', border: 'none', cursor: 'pointer',
-                                borderBottom: activeTab === 'description' ? '2px solid #3B82F6' : '2px solid transparent',
-                                color: activeTab === 'description' ? '#3B82F6' : '#6B7280', fontWeight: '600', fontSize: '14px'
-                            }}
+                {/* Tabs Content */}
+                <Tabs defaultValue="description" className="flex-1 flex flex-col overflow-hidden">
+                    <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-6">
+                        <TabsTrigger 
+                            value="description" 
+                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-4"
                         >
                             Job Description
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('application')}
-                            style={{
-                                padding: '16px 24px', background: 'transparent', border: 'none', cursor: 'pointer',
-                                borderBottom: activeTab === 'application' ? '2px solid #3B82F6' : '2px solid transparent',
-                                color: activeTab === 'application' ? '#3B82F6' : '#6B7280', fontWeight: '600', fontSize: '14px'
-                            }}
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="application"
+                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-4"
                         >
                             Application Data
-                        </button>
-                    </div>
+                        </TabsTrigger>
+                    </TabsList>
 
-                    {/* Content */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '24px', backgroundColor: '#F9FAFB' }}>
-                        {activeTab === 'description' ? (
-                            <div style={{ lineHeight: '1.6', color: '#374151', whiteSpace: 'pre-wrap' }}>
-                                <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>About the Job</h3>
+                    <div className="flex-1 overflow-y-auto bg-muted/30">
+                        <TabsContent value="description" className="m-0 p-6">
+                            <h3 className="text-lg font-bold mb-4">About the Job</h3>
+                            <div className="text-foreground leading-relaxed whitespace-pre-wrap">
                                 {task.jobDescription || "No description available."}
                             </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                                {/* Application Screenshot */}
+                        </TabsContent>
+
+                        <TabsContent value="application" className="m-0 p-6 space-y-8">
+                            {/* Application Screenshot */}
+                            <div>
+                                <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                                    <Image className="h-5 w-5" /> Application Screenshot
+                                </h3>
+                                <Card>
+                                    {task.screenshotUrl ? (
+                                        <img src={task.screenshotUrl} alt="Application" className="w-full h-auto" />
+                                    ) : (
+                                        <CardContent className="py-10 text-center text-muted-foreground bg-muted/50">
+                                            No screenshot available
+                                        </CardContent>
+                                    )}
+                                </Card>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                {/* Resume */}
                                 <div>
-                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Image size={20} /> Application Screenshot
+                                    <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                                        <FileText className="h-5 w-5" /> Resume
                                     </h3>
-                                    <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white' }}>
-                                        {task.screenshotUrl ? (
-                                            <img src={task.screenshotUrl} alt="Application" style={{ width: '100%', height: 'auto', display: 'block' }} />
-                                        ) : (
-                                            <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF', backgroundColor: '#F3F4F6' }}>No screenshot available</div>
-                                        )}
-                                    </div>
+                                    <Card>
+                                        <CardContent className="p-4 flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                                                <FileText className="h-6 w-6" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-medium">{task.resumeUrl || "Resume.pdf"}</div>
+                                                <div className="text-xs text-muted-foreground">PDF Document</div>
+                                            </div>
+                                            <Button variant="link" className="text-primary">View</Button>
+                                        </CardContent>
+                                    </Card>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                    {/* Resume */}
-                                    <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <FileText size={20} /> Resume
-                                        </h3>
-                                        <div style={{ backgroundColor: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <div style={{ width: '40px', height: '40px', backgroundColor: '#EFF6FF', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
-                                                <FileText size={24} />
+                                {/* Cover Letter */}
+                                <div>
+                                    <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                                        <File className="h-5 w-5" /> Cover Letter
+                                    </h3>
+                                    <Card>
+                                        <CardContent className="p-4 flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                                                <File className="h-6 w-6" />
                                             </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '14px', fontWeight: '500', color: '#1F2937' }}>{task.resumeUrl || "Resume.pdf"}</div>
-                                                <div style={{ fontSize: '12px', color: '#6B7280' }}>PDF Document</div>
+                                            <div className="flex-1">
+                                                <div className="font-medium">{task.coverLetterUrl || "CoverLetter.pdf"}</div>
+                                                <div className="text-xs text-muted-foreground">PDF Document</div>
                                             </div>
-                                            <button style={{ padding: '8px 16px', fontSize: '13px', color: '#3B82F6', fontWeight: '600', background: 'transparent', border: 'none', cursor: 'pointer' }}>View</button>
-                                        </div>
-                                    </div>
-
-                                    {/* Cover Letter */}
-                                    <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <File size={20} /> Cover Letter
-                                        </h3>
-                                        <div style={{ backgroundColor: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <div style={{ width: '40px', height: '40px', backgroundColor: '#EFF6FF', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
-                                                <File size={24} />
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '14px', fontWeight: '500', color: '#1F2937' }}>{task.coverLetterUrl || "CoverLetter.pdf"}</div>
-                                                <div style={{ fontSize: '12px', color: '#6B7280' }}>PDF Document</div>
-                                            </div>
-                                            <button style={{ padding: '8px 16px', fontSize: '13px', color: '#3B82F6', fontWeight: '600', background: 'transparent', border: 'none', cursor: 'pointer' }}>View</button>
-                                        </div>
-                                    </div>
+                                            <Button variant="link" className="text-primary">View</Button>
+                                        </CardContent>
+                                    </Card>
                                 </div>
                             </div>
-                        )}
+                        </TabsContent>
                     </div>
-                </motion.div>
-            </div>
-        </AnimatePresence>
+                </Tabs>
+            </DialogContent>
+        </Dialog>
     );
 };
 

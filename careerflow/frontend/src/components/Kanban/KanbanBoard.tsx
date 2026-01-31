@@ -1,7 +1,35 @@
-import React, { useState } from 'react';
-import { MoreHorizontal, Search, Filter, Settings, Calendar as CalendarIcon, ArrowRight, Trash2, List, Grid } from 'lucide-react';
+import { useState } from 'react';
+import { MoreHorizontal, Search, Filter, Settings, Calendar as CalendarIcon, ArrowRight, Trash2, List, LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 import JobDetailModal from './JobDetailModal';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // --- Types ---
 interface Task {
@@ -88,12 +116,10 @@ const CompanyLogo = ({ name }: { name: string }) => {
     const color = getLogoColor(name);
     const initial = name.charAt(0).toUpperCase();
     return (
-        <div style={{
-            width: '20px', height: '20px', borderRadius: '4px',
-            backgroundColor: `${color}20`, color: color,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '11px', fontWeight: 'bold'
-        }}>
+        <div 
+            className="w-5 h-5 rounded flex items-center justify-center text-[11px] font-bold"
+            style={{ backgroundColor: `${color}20`, color: color }}
+        >
             {initial}
         </div>
     );
@@ -106,8 +132,6 @@ const KanbanBoard: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [viewDate, setViewDate] = useState(new Date());
 
-    // Actions State
-    const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<{ task: Task, columnId: ColumnId } | null>(null);
     const [deleteInput, setDeleteInput] = useState('');
 
@@ -196,7 +220,6 @@ const KanbanBoard: React.FC = () => {
             [sourceColumn]: sourceList,
             [targetColumn]: [...prev[targetColumn], updatedTask]
         }));
-        setActiveMenuId(null);
     };
 
     const handleUpdateDate = (columnId: ColumnId, taskId: string, newDate: string) => {
@@ -204,7 +227,6 @@ const KanbanBoard: React.FC = () => {
             ...prev,
             [columnId]: prev[columnId].map(t => t.id === taskId ? { ...t, date: newDate } : t)
         }));
-        setActiveMenuId(null);
     };
 
     const confirmDelete = () => {
@@ -214,147 +236,107 @@ const KanbanBoard: React.FC = () => {
             [taskToDelete.columnId]: prev[taskToDelete.columnId].filter(t => t.id !== taskToDelete.task.id)
         }));
         setTaskToDelete(null);
+        setDeleteInput('');
     };
 
     // --- Render Helpers ---
 
     const renderBoard = () => (
-        <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '20px' }}>
+        <div className="flex gap-6 overflow-x-auto pb-5">
             {COLUMNS.map(column => (
                 <div
                     key={column.id}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => onDrop(e, column.id)}
-                    style={{ flex: '0 0 300px', display: 'flex', flexDirection: 'column' }}
+                    className="flex-shrink-0 w-[300px] flex flex-col"
                 >
                     {/* Column Header */}
-                    <div style={{ marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#374151', margin: 0 }}>{column.title}</h3>
-                                <span style={{ fontSize: '14px', color: '#9CA3AF' }}>{displayTasks[column.id].length}</span>
+                    <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-foreground">{column.title}</h3>
+                                <span className="text-sm text-muted-foreground">{displayTasks[column.id].length}</span>
                             </div>
-                            <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}>
-                                <MoreHorizontal size={16} />
-                            </button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
                         </div>
-                        <div style={{ width: '100%', height: '3px', backgroundColor: column.color, borderRadius: '2px' }}></div>
+                        <div className="w-full h-[3px] rounded-sm" style={{ backgroundColor: column.color }} />
                     </div>
 
                     {/* Tasks List */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="flex flex-col gap-3">
                         {displayTasks[column.id].map(task => (
                             <motion.div
                                 key={task.id}
                                 layoutId={task.id}
                                 draggable
                                 onDragStart={(e) => onDragStart(e as unknown as React.DragEvent, task, column.id)}
-                                onClick={() => setSelectedTask(task)}
-                                style={{
-                                    backgroundColor: 'white',
-                                    borderRadius: '8px',
-                                    padding: '16px',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                    cursor: 'grab',
-                                    border: '1px solid #E5E7EB',
-                                    display: 'flex',
-                                    flexDirection: 'column'
-                                }}
                                 whileHover={{ y: -2, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                             >
-                                {/* Header: Logo + Company */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                    <CompanyLogo name={task.company} />
-                                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#111827' }}>{task.company}</span>
-                                </div>
+                                <Card 
+                                    className="cursor-grab border shadow-sm hover:shadow-md transition-shadow"
+                                    onClick={() => setSelectedTask(task)}
+                                >
+                                    <CardContent className="p-4">
+                                        {/* Header: Logo + Company */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <CompanyLogo name={task.company} />
+                                            <span className="text-sm font-bold text-foreground">{task.company}</span>
+                                        </div>
 
-                                {/* Role */}
-                                <h4 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#111827' }}>{task.role}</h4>
+                                        {/* Role */}
+                                        <h4 className="text-[15px] font-bold text-foreground mb-2">{task.role}</h4>
 
-                                {/* Description */}
-                                <p style={{
-                                    fontSize: '13px', color: '#6B7280', margin: '0 0 16px 0',
-                                    lineHeight: '1.4',
-                                    display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                                }}>
-                                    {task.description}
-                                </p>
+                                        {/* Description */}
+                                        <p className="text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
+                                            {task.description}
+                                        </p>
 
-                                {/* Footer: Separator + Date + Menu */}
-                                <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                                    <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{task.date}</span>
+                                        {/* Footer */}
+                                        <div className="border-t pt-3 flex justify-between items-center">
+                                            <span className="text-xs text-muted-foreground">{task.date}</span>
 
-                                    <div style={{ position: 'relative' }}>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setActiveMenuId(activeMenuId === task.id ? null : task.id);
-                                            }}
-                                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px' }}
-                                        >
-                                            <MoreHorizontal size={16} />
-                                        </button>
-
-                                        {activeMenuId === task.id && (
-                                            <div style={{
-                                                position: 'absolute', right: 0, bottom: '100%',
-                                                backgroundColor: 'white', borderRadius: '8px',
-                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                                                border: '1px solid #E5E7EB', zIndex: 10, minWidth: '160px', overflow: 'hidden',
-                                                marginBottom: '8px'
-                                            }} onClick={e => e.stopPropagation()}>
-                                                <div style={{ padding: '4px' }}>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-6 w-6 text-muted-foreground"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                                                     {COLUMNS.filter(c => c.id !== column.id).map(targetCol => (
-                                                        <button
+                                                        <DropdownMenuItem
                                                             key={targetCol.id}
                                                             onClick={() => handleMoveTask(column.id, targetCol.id, task.id)}
-                                                            style={{
-                                                                display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-                                                                padding: '8px', fontSize: '13px', textAlign: 'left',
-                                                                border: 'none', background: 'transparent', cursor: 'pointer',
-                                                                color: '#374151'
-                                                            }}
-                                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F3F4F6'}
-                                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                                         >
-                                                            <ArrowRight size={14} /> Move to {targetCol.title}
-                                                        </button>
+                                                            <ArrowRight className="h-4 w-4 mr-2" /> Move to {targetCol.title}
+                                                        </DropdownMenuItem>
                                                     ))}
-                                                    <button
+                                                    <DropdownMenuItem
                                                         onClick={() => {
                                                             const newDate = prompt("Enter new date:", task.date);
                                                             if (newDate) handleUpdateDate(column.id, task.id, newDate);
                                                         }}
-                                                        style={{
-                                                            display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-                                                            padding: '8px', fontSize: '13px', textAlign: 'left',
-                                                            border: 'none', background: 'transparent', cursor: 'pointer',
-                                                            color: '#374151'
-                                                        }}
-                                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F3F4F6'}
-                                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                                     >
-                                                        <CalendarIcon size={14} /> Change Date
-                                                    </button>
-                                                    <div style={{ height: '1px', backgroundColor: '#E5E7EB', margin: '4px 0' }} />
-                                                    <button
+                                                        <CalendarIcon className="h-4 w-4 mr-2" /> Change Date
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
                                                         onClick={() => setTaskToDelete({ task, columnId: column.id })}
-                                                        style={{
-                                                            display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-                                                            padding: '8px', fontSize: '13px', textAlign: 'left',
-                                                            border: 'none', background: 'transparent', cursor: 'pointer',
-                                                            color: '#EF4444'
-                                                        }}
-                                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-                                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                                     >
-                                                        <Trash2 size={14} /> Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </motion.div>
                         ))}
                     </div>
@@ -364,41 +346,45 @@ const KanbanBoard: React.FC = () => {
     );
 
     const renderTable = () => (
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-                    <tr>
-                        <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#6B7280' }}>Role</th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#6B7280' }}>Company</th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#6B7280' }}>Date Applied</th>
-                        <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#6B7280' }}>Status</th>
-                        <th style={{ padding: '16px', textAlign: 'right', fontWeight: '600', color: '#6B7280' }}>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <Card className="border-0 shadow-sm">
+            <Table>
+                <TableHeader>
+                    <TableRow className="bg-muted/50">
+                        <TableHead className="font-semibold">Role</TableHead>
+                        <TableHead className="font-semibold">Company</TableHead>
+                        <TableHead className="font-semibold">Date Applied</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
                     {getAllTasksFlat().map(task => (
-                        <tr key={task.id} style={{ borderBottom: '1px solid #E5E7EB', cursor: 'pointer' }} onClick={() => setSelectedTask(task)}>
-                            <td style={{ padding: '16px', fontWeight: '500', color: '#111827' }}>{task.role}</td>
-                            <td style={{ padding: '16px', color: '#6B7280' }}>{task.company}</td>
-                            <td style={{ padding: '16px', color: '#6B7280' }}>{task.date}</td>
-                            <td style={{ padding: '16px' }}>
-                                <span style={{
-                                    padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: '500',
-                                    backgroundColor: `${task.statusColor}20`, color: task.statusColor
-                                }}>
+                        <TableRow 
+                            key={task.id} 
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => setSelectedTask(task)}
+                        >
+                            <TableCell className="font-medium">{task.role}</TableCell>
+                            <TableCell className="text-muted-foreground">{task.company}</TableCell>
+                            <TableCell className="text-muted-foreground">{task.date}</TableCell>
+                            <TableCell>
+                                <Badge 
+                                    variant="secondary"
+                                    style={{ backgroundColor: `${task.statusColor}20`, color: task.statusColor }}
+                                >
                                     {COLUMNS.find(c => c.id === task.status)?.title}
-                                </span>
-                            </td>
-                            <td style={{ padding: '16px', textAlign: 'right' }}>
-                                <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}>
-                                    <MoreHorizontal size={16} />
-                                </button>
-                            </td>
-                        </tr>
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </TableCell>
+                        </TableRow>
                     ))}
-                </tbody>
-            </table>
-        </div>
+                </TableBody>
+            </Table>
+        </Card>
     );
 
     const getAllTasksFlat = () => {
@@ -435,117 +421,103 @@ const KanbanBoard: React.FC = () => {
         };
 
         return (
-            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>
+            <Card className="border-0 shadow-sm p-6">
+                <div className="flex justify-between mb-5">
+                    <h2 className="text-lg font-bold">
                         {viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                     </h2>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button onClick={handlePrevMonth} style={{ padding: '6px', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'transparent', cursor: 'pointer' }}>&lt;</button>
-                        <button onClick={handleNextMonth} style={{ padding: '6px', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'transparent', cursor: 'pointer' }}>&gt;</button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={handlePrevMonth}>&lt;</Button>
+                        <Button variant="outline" size="sm" onClick={handleNextMonth}>&gt;</Button>
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', backgroundColor: '#E5E7EB', border: '1px solid #E5E7EB' }}>
+                <div className="grid grid-cols-7 gap-px bg-border border rounded-lg overflow-hidden">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} style={{ padding: '12px', backgroundColor: '#F9FAFB', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>{day}</div>
+                        <div key={day} className="p-3 bg-muted/50 font-semibold text-sm text-center">{day}</div>
                     ))}
 
-                    {placeholders.map(i => <div key={`empty-${i}`} style={{ backgroundColor: 'white', height: '100px' }} />)}
+                    {placeholders.map(i => <div key={`empty-${i}`} className="bg-card h-24" />)}
 
                     {days.map(day => {
                         const dayTasks = getTasksForDate(day);
                         return (
-                            <div key={day} style={{ backgroundColor: 'white', height: '100px', padding: '8px', overflow: 'hidden' }}>
-                                <div style={{ fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>{day}</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    {dayTasks.map(task => (
+                            <div key={day} className="bg-card h-24 p-2 overflow-hidden">
+                                <div className="text-sm font-medium text-foreground mb-1.5">{day}</div>
+                                <div className="flex flex-col gap-1">
+                                    {dayTasks.slice(0, 3).map(task => (
                                         <div
                                             key={task.id}
                                             onClick={() => setSelectedTask(task)}
-                                            style={{
-                                                fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
-                                                backgroundColor: `${task.statusColor}20`, color: task.statusColor,
-                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                                cursor: 'pointer'
-                                            }}>
+                                            className="text-[10px] px-1.5 py-0.5 rounded cursor-pointer truncate"
+                                            style={{ backgroundColor: `${task.statusColor}20`, color: task.statusColor }}
+                                        >
                                             {task.role}
                                         </div>
                                     ))}
                                     {dayTasks.length > 3 && (
-                                        <div style={{ fontSize: '10px', color: '#9CA3AF', paddingLeft: '2px' }}>+ {dayTasks.length - 3} more</div>
+                                        <div className="text-[10px] text-muted-foreground pl-0.5">+ {dayTasks.length - 3} more</div>
                                     )}
                                 </div>
                             </div>
                         );
                     })}
                 </div>
-            </div>
+            </Card>
         );
     };
 
-    const headerButtonStyle = (mode: ViewMode) => ({
-        padding: '6px 12px',
-        backgroundColor: viewMode === mode ? 'white' : 'transparent',
-        borderRadius: '6px',
-        border: 'none',
-        boxShadow: viewMode === mode ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-        fontSize: '14px',
-        fontWeight: '500',
-        color: viewMode === mode ? '#111827' : '#6B7280',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px'
-    });
-
     return (
-        <div style={{ padding: '0px', width: '100%', minHeight: '80vh' }} onClick={() => setActiveMenuId(null)}>
+        <div className="w-full min-h-[80vh]">
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Application Process</h1>
-                    <div style={{ display: 'flex', backgroundColor: '#F3F4F6', borderRadius: '8px', padding: '4px' }}>
-                        <button onClick={() => setViewMode('board')} style={headerButtonStyle('board')}>
-                            <Grid size={14} /> Board
-                        </button>
-                        <button onClick={() => setViewMode('table')} style={headerButtonStyle('table')}>
-                            <List size={14} /> Table
-                        </button>
-                        <button onClick={() => setViewMode('calendar')} style={headerButtonStyle('calendar')}>
-                            <CalendarIcon size={14} /> Calendar
-                        </button>
+            <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-5">
+                    <h1 className="text-2xl font-bold">Application Process</h1>
+                    <div className="flex bg-muted rounded-lg p-1">
+                        <Button 
+                            variant={viewMode === 'board' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('board')}
+                            className={cn(viewMode === 'board' && 'bg-background shadow-sm')}
+                        >
+                            <LayoutGrid className="h-4 w-4 mr-1.5" /> Board
+                        </Button>
+                        <Button 
+                            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('table')}
+                            className={cn(viewMode === 'table' && 'bg-background shadow-sm')}
+                        >
+                            <List className="h-4 w-4 mr-1.5" /> Table
+                        </Button>
+                        <Button 
+                            variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('calendar')}
+                            className={cn(viewMode === 'calendar' && 'bg-background shadow-sm')}
+                        >
+                            <CalendarIcon className="h-4 w-4 mr-1.5" /> Calendar
+                        </Button>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '5px', color: '#6B7280', fontSize: '14px',
-                        backgroundColor: 'white', padding: '6px 12px', borderRadius: '6px', border: '1px solid #E5E7EB'
-                    }}>
-                        <Search size={16} />
-                        <input
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
                             type="text"
                             placeholder="Search..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{ border: 'none', outline: 'none', fontSize: '14px', color: '#374151', width: '150px' }}
+                            className="pl-9 w-40"
                         />
                     </div>
-                    <button style={{
-                        display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px',
-                        backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '6px',
-                        color: '#374151', fontSize: '14px', fontWeight: '500', cursor: 'pointer'
-                    }}>
-                        <Filter size={16} /> Filter
-                    </button>
-                    <button style={{
-                        display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px',
-                        backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '6px',
-                        color: '#374151', fontSize: '14px', fontWeight: '500', cursor: 'pointer'
-                    }}>
-                        <Settings size={16} /> Settings
-                    </button>
+                    <Button variant="outline" size="sm">
+                        <Filter className="h-4 w-4 mr-1.5" /> Filter
+                    </Button>
+                    <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-1.5" /> Settings
+                    </Button>
                 </div>
             </div>
 
@@ -559,26 +531,32 @@ const KanbanBoard: React.FC = () => {
                 <JobDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} />
             )}
 
-            {taskToDelete && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
-                }} onClick={() => setTaskToDelete(null)}>
-                    <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '400px', maxWidth: '90%' }} onClick={e => e.stopPropagation()}>
-                        <h3 style={{ marginTop: 0, fontWeight: 'bold', fontSize: '18px' }}>Confirm Removal</h3>
-                        <p style={{ color: '#4B5563', marginBottom: '20px' }}>To remove <strong>{taskToDelete.task.role}</strong>, type job title.</p>
-                        <input type="text" value={deleteInput} onChange={(e) => setDeleteInput(e.target.value)}
-                            placeholder={taskToDelete.task.role}
-                            style={{ width: '100%', padding: '10px', border: '1px solid #D1D5DB', borderRadius: '8px', marginBottom: '20px' }}
-                        />
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                            <button onClick={() => setTaskToDelete(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #D1D5DB', background: 'white' }}>Cancel</button>
-                            <button onClick={confirmDelete} disabled={deleteInput !== taskToDelete.task.role}
-                                style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: deleteInput === taskToDelete.task.role ? '#EF4444' : '#F3F4F6', color: deleteInput === taskToDelete.task.role ? 'white' : '#9CA3AF' }}>Remove Application</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Removal</DialogTitle>
+                        <DialogDescription>
+                            To remove <strong>{taskToDelete?.task.role}</strong>, type the job title below.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                        value={deleteInput}
+                        onChange={(e) => setDeleteInput(e.target.value)}
+                        placeholder={taskToDelete?.task.role}
+                    />
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setTaskToDelete(null)}>Cancel</Button>
+                        <Button 
+                            variant="destructive" 
+                            onClick={confirmDelete}
+                            disabled={deleteInput !== taskToDelete?.task.role}
+                        >
+                            Remove Application
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

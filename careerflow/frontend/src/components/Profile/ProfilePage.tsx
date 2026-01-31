@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     User, Briefcase, GraduationCap, Award, FolderOpen,
     BadgeCheck, Trophy, ChevronRight,
@@ -13,6 +13,28 @@ import {
 import type { ResumeProfile } from '../../types';
 import { RESUME_PROFILE_MAX_COUNT } from '../../types';
 import { ProfileSelector } from '../Resume/ProfileSelector';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 // Define section types
 type SectionType = 'profile' | 'resume-profiles' | 'experience' | 'education' | 'skills' | 'projects' | 'certifications' | 'accomplishments';
@@ -752,589 +774,410 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
         }
     };
 
-    // Shared Styles
-    const cardStyle = {
-        backgroundColor: 'white',
-        padding: '24px',
-        borderRadius: '16px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-    };
-
-    const inputStyle = {
-        width: '100%',
-        padding: '10px 12px',
-        borderRadius: '8px',
-        border: '1px solid #E5E7EB',
-        fontSize: '14px',
-        outline: 'none'
-    };
-
-    const sectionHeaderStyle = {
-        fontSize: '18px',
-        fontWeight: 'bold' as const,
-        color: '#111827',
-        marginBottom: '20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-    };
-
     // Render Resume Profiles Section
     const renderResumeProfilesSection = () => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="flex flex-col gap-5">
             {/* Header with Profile Selector */}
-            <div style={cardStyle}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>Resume Profiles</h2>
-                        <p style={{ fontSize: '13px', color: '#6B7280', margin: '4px 0 0' }}>
+                        <h2 className="text-lg font-semibold text-foreground">Resume Profiles</h2>
+                        <p className="text-sm text-muted-foreground mt-1">
                             Manage your tailored resume variations ({resumeProfiles.length}/{RESUME_PROFILE_MAX_COUNT} profiles)
                         </p>
                     </div>
                 </div>
 
                 {resumeProfiles.length === 0 ? (
-                    <div style={{
-                        padding: '40px 20px',
-                        textAlign: 'center',
-                        backgroundColor: '#F9FAFB',
-                        borderRadius: '12px',
-                        border: '1px dashed #E5E7EB',
-                    }}>
-                        <Bookmark size={32} style={{ color: '#9CA3AF', marginBottom: '12px' }} />
-                        <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#374151', margin: '0 0 8px' }}>
+                    <div className="py-10 px-5 text-center bg-muted/50 rounded-xl border border-dashed">
+                        <Bookmark className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+                        <h3 className="text-sm font-semibold text-foreground mb-2">
                             No Resume Profiles Yet
                         </h3>
-                        <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, maxWidth: '300px', marginLeft: 'auto', marginRight: 'auto' }}>
+                        <p className="text-sm text-muted-foreground max-w-[300px] mx-auto">
                             Create your first resume profile by going to the Resume page and saving your changes.
                         </p>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="flex flex-col gap-3">
                         {resumeProfiles.map((profile) => (
                             <div
                                 key={profile.id}
                                 onClick={() => handleResumeProfileSelect(profile.id)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '16px 20px',
-                                    backgroundColor: activeResumeProfileId === profile.id ? '#EEF2FF' : '#F9FAFB',
-                                    borderRadius: '12px',
-                                    border: activeResumeProfileId === profile.id ? '2px solid #4F46E5' : '1px solid #E5E7EB',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.15s ease',
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (activeResumeProfileId !== profile.id) {
-                                        e.currentTarget.style.backgroundColor = '#F3F4F6';
-                                        e.currentTarget.style.borderColor = '#D1D5DB';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (activeResumeProfileId !== profile.id) {
-                                        e.currentTarget.style.backgroundColor = '#F9FAFB';
-                                        e.currentTarget.style.borderColor = '#E5E7EB';
-                                    }
-                                }}
+                                className={cn(
+                                    "flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all",
+                                    activeResumeProfileId === profile.id 
+                                        ? "bg-primary/5 border-2 border-primary" 
+                                        : "bg-muted/50 border border-border hover:bg-muted hover:border-muted-foreground/20"
+                                )}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                    <div style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '10px',
-                                        backgroundColor: activeResumeProfileId === profile.id ? '#C7D2FE' : '#EEF2FF',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}>
-                                        <Bookmark size={18} style={{ color: '#4F46E5' }} />
+                                <div className="flex items-center gap-3.5">
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-lg flex items-center justify-center",
+                                        activeResumeProfileId === profile.id ? "bg-primary/20" : "bg-primary/10"
+                                    )}>
+                                        <Bookmark className="h-4.5 w-4.5 text-primary" />
                                     </div>
                                     <div>
-                                        <div style={{
-                                            fontSize: '14px',
-                                            fontWeight: '600',
-                                            color: '#111827',
-                                            fontFamily: "'JetBrains Mono', monospace",
-                                        }}>
+                                        <div className="text-sm font-semibold font-mono">
                                             {profile.name}
                                         </div>
-                                        <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
+                                        <div className="text-xs text-muted-foreground mt-0.5">
                                             {profile.resumeSnapshot?.experience?.length || 0} experiences • {profile.resumeSnapshot?.skills?.length || 0} skills
                                         </div>
-                                        <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                                        <div className="text-[11px] text-muted-foreground/60 mt-0.5">
                                             Updated {new Date(profile.updatedAt).toLocaleDateString()}
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => setProfileToDelete(profile)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '8px 14px',
-                                        backgroundColor: '#FEF2F2',
-                                        color: '#DC2626',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                    }}
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={(e) => { e.stopPropagation(); setProfileToDelete(profile); }}
+                                    className="gap-1.5"
                                 >
-                                    <Trash2 size={14} />
+                                    <Trash2 className="h-3.5 w-3.5" />
                                     Delete
-                                </button>
+                                </Button>
                             </div>
                         ))}
                     </div>
                 )}
-            </div>
+            </Card>
 
             {/* Delete Confirmation Modal */}
-            {profileToDelete && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                }}>
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '16px',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                        padding: '24px',
-                        maxWidth: '400px',
-                        width: '90%',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                            <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '10px',
-                                backgroundColor: '#FEF2F2',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}>
-                                <AlertCircle size={20} style={{ color: '#DC2626' }} />
+            <Dialog open={!!profileToDelete} onOpenChange={(open) => !open && setProfileToDelete(null)}>
+                <DialogContent className="max-w-[400px]">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                                <AlertCircle className="h-5 w-5 text-destructive" />
                             </div>
                             <div>
-                                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0 }}>
-                                    Delete Profile
-                                </h3>
-                                <p style={{ fontSize: '13px', color: '#6B7280', margin: '2px 0 0' }}>
-                                    This action cannot be undone
-                                </p>
+                                <DialogTitle>Delete Profile</DialogTitle>
+                                <DialogDescription>This action cannot be undone</DialogDescription>
                             </div>
                         </div>
+                    </DialogHeader>
 
-                        <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 20px', lineHeight: '1.5' }}>
-                            Are you sure you want to delete the profile <strong style={{ fontFamily: "'JetBrains Mono', monospace" }}>"{profileToDelete.name}"</strong>? 
-                            All saved resume data for this profile will be permanently removed.
-                        </p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                        Are you sure you want to delete the profile <strong className="font-mono">"{profileToDelete?.name}"</strong>? 
+                        All saved resume data for this profile will be permanently removed.
+                    </p>
 
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                            <button
-                                onClick={() => setProfileToDelete(null)}
-                                disabled={isDeletingProfile}
-                                style={{
-                                    padding: '10px 18px',
-                                    backgroundColor: '#F3F4F6',
-                                    color: '#374151',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => handleDeleteProfile(profileToDelete)}
-                                disabled={isDeletingProfile}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '10px 18px',
-                                    backgroundColor: '#DC2626',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    cursor: isDeletingProfile ? 'not-allowed' : 'pointer',
-                                    opacity: isDeletingProfile ? 0.7 : 1,
-                                }}
-                            >
-                                {isDeletingProfile ? (
-                                    <>
-                                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                                        Deleting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Trash2 size={14} />
-                                        Delete Profile
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setProfileToDelete(null)} disabled={isDeletingProfile}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="destructive" 
+                            onClick={() => profileToDelete && handleDeleteProfile(profileToDelete)}
+                            disabled={isDeletingProfile}
+                        >
+                            {isDeletingProfile ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="h-4 w-4 mr-1.5" />
+                                    Delete Profile
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 
     // Render Sections
     const renderProfileSection = () => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Resume Upload Card - Now on Profile page */}
-            <div style={{
-                ...cardStyle,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px',
-                border: resumeParsed ? '1px solid #10B981' : '1px solid transparent',
-            }}>
-                <div style={{
-                    width: '48px', height: '48px', borderRadius: '12px',
-                    background: resumeParsed ? 'linear-gradient(135deg, #10B981, #059669)'
-                        : isParsingResume ? 'linear-gradient(135deg, #3B82F6, #2563EB)'
-                            : 'linear-gradient(135deg, #6366F1, #4F46E5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                }}>
-                    {isParsingResume ? <Loader2 size={22} className="animate-spin" />
-                        : resumeParsed ? <CheckCircle size={22} /> : <Sparkles size={22} />}
+        <div className="flex flex-col gap-5">
+            {/* Resume Upload Card */}
+            <Card className={cn(
+                "p-5 flex items-center gap-5",
+                resumeParsed && "border-green-500"
+            )}>
+                <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center text-white",
+                    resumeParsed ? "bg-gradient-to-br from-green-500 to-green-600"
+                        : isParsingResume ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                            : "bg-gradient-to-br from-indigo-500 to-indigo-600"
+                )}>
+                    {isParsingResume ? <Loader2 className="h-5 w-5 animate-spin" />
+                        : resumeParsed ? <CheckCircle className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
                 </div>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: 0, marginBottom: '4px' }}>
+                <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-foreground mb-1">
                         {resumeParsed ? 'Resume Imported Successfully' : isParsingResume ? 'Parsing Resume...' : 'Quick Import from Resume'}
                     </h3>
-                    <p style={{ fontSize: '13px', color: '#6B7280', margin: 0 }}>
+                    <p className="text-sm text-muted-foreground">
                         {resumeFile ? resumeFile.name : 'Upload to auto-fill Experience, Education, Skills & Projects'}
                     </p>
-                    {resumeError && <p style={{ fontSize: '12px', color: '#DC2626', margin: '4px 0 0 0' }}>{resumeError}</p>}
+                    {resumeError && <p className="text-xs text-destructive mt-1">{resumeError}</p>}
                 </div>
-                <label style={{
-                    backgroundColor: resumeParsed ? '#ECFDF5' : '#EEF2FF',
-                    color: resumeParsed ? '#059669' : '#4F46E5',
-                    padding: '10px 18px', borderRadius: '8px', fontWeight: '500', fontSize: '14px',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
-                }}>
-                    {resumeParsed ? <CheckCircle size={16} /> : <UploadCloud size={16} />}
+                <label className={cn(
+                    "px-4 py-2.5 rounded-lg font-medium text-sm cursor-pointer flex items-center gap-1.5",
+                    resumeParsed ? "bg-green-50 text-green-600" : "bg-indigo-50 text-indigo-600"
+                )}>
+                    {resumeParsed ? <CheckCircle className="h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
                     {resumeParsed ? 'Imported' : 'Upload Resume'}
-                    <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => e.target.files?.[0] && handleResumeUpload(e.target.files[0])} style={{ display: 'none' }} />
+                    <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => e.target.files?.[0] && handleResumeUpload(e.target.files[0])} className="hidden" />
                 </label>
-            </div>
+            </Card>
 
             {/* Save Message */}
             {saveMessage && (
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    marginBottom: '16px',
-                    backgroundColor: saveMessage.type === 'success' ? '#ECFDF5' : '#FEF2F2',
-                    color: saveMessage.type === 'success' ? '#059669' : '#DC2626',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                }}>
-                    {saveMessage.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                <div className={cn(
+                    "flex items-center gap-2.5 px-4 py-3 rounded-lg text-sm font-medium",
+                    saveMessage.type === 'success' ? "bg-green-50 text-green-600" : "bg-red-50 text-destructive"
+                )}>
+                    {saveMessage.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                     {saveMessage.text}
                 </div>
             )}
 
             {/* Personal Information Form */}
-            <form onSubmit={handleSubmit} style={cardStyle}>
-                <div style={sectionHeaderStyle}>
-                    <h2 style={{ margin: 0 }}>Personal Information</h2>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        {isDevMode && (
-                            <button
-                                type="button"
-                                onClick={handleResetProfile}
-                                disabled={isResetting}
-                                style={{
-                                    backgroundColor: isResetting ? '#FCA5A5' : '#EF4444',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '10px 16px',
-                                    borderRadius: '8px',
-                                    fontWeight: '600',
-                                    cursor: isResetting ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    transition: 'background-color 0.2s ease',
-                                }}
-                                title="Dev Mode: Reset Profile"
-                            >
-                                {isResetting ? (
+            <Card className="p-6">
+                <form onSubmit={handleSubmit}>
+                    <div className="flex justify-between items-center mb-5">
+                        <h2 className="text-lg font-bold text-foreground">Personal Information</h2>
+                        <div className="flex gap-2.5 items-center">
+                            {isDevMode && (
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    onClick={handleResetProfile}
+                                    disabled={isResetting}
+                                >
+                                    {isResetting ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            Resetting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RotateCcw className="h-4 w-4 mr-2" /> Reset
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                            <Button type="submit" disabled={isSaving}>
+                                {isSaving ? (
                                     <>
-                                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                                        Resetting...
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                        Saving...
                                     </>
                                 ) : (
                                     <>
-                                        <RotateCcw size={16} /> Reset
+                                        <Save className="h-4 w-4 mr-2" /> Save Changes
                                     </>
                                 )}
-                            </button>
-                        )}
-                        <button
-                            type="submit"
-                            disabled={isSaving}
-                            style={{
-                                backgroundColor: isSaving ? '#93C5FD' : '#2563EB',
-                                color: 'white',
-                                border: 'none',
-                                padding: '10px 20px',
-                                borderRadius: '8px',
-                                fontWeight: '600',
-                                cursor: isSaving ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'background-color 0.2s ease',
-                            }}
-                        >
-                            {isSaving ? (
-                                <>
-                                    <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Save size={16} /> Save Changes
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <InputField label="First Name" name="firstName" value={user.firstName} onChange={handleChange} required error={validationErrors.firstName} />
-                    <InputField label="Last Name" name="lastName" value={user.lastName} onChange={handleChange} required error={validationErrors.lastName} />
-                    <InputField label="Role / Job Title" name="role" value={user.role} onChange={handleChange} icon={<Briefcase size={16} />} />
-                    <InputField label="Company" name="company" value={user.company} onChange={handleChange} />
-                    <InputField label="Email" name="email" value={user.email} onChange={handleChange} icon={<Mail size={16} />} required error={validationErrors.email} />
-                    <InputField label="Phone" name="phone" value={user.phone} onChange={handleChange} icon={<Phone size={16} />} error={validationErrors.phone} />
-                    <InputField label="Location" name="location" value={user.location} onChange={handleChange} icon={<MapPin size={16} />} />
-                    <InputField label="Website" name="website" value={user.website} onChange={handleChange} icon={<Globe size={16} />} />
-                </div>
-
-                <div style={{ marginTop: '20px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151', display: 'block', marginBottom: '8px' }}>Bio / Summary</label>
-                    <textarea
-                        name="bio"
-                        value={user.bio}
-                        onChange={handleChange}
-                        rows={4}
-                        style={{ ...inputStyle, resize: 'vertical' }}
-                        placeholder="A brief summary about yourself that will be used for cover letters..."
-                    />
-                </div>
-
-                {/* Divider */}
-                <div style={{ margin: '28px 0 24px 0', height: '1px', backgroundColor: '#E5E7EB' }} />
-
-                {/* Voluntary Self-Identification */}
-                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '20px' }}>
-                    Voluntary Self-Identification
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    {/* Gender */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                            Gender
-                        </label>
-                        <select
-                            name="gender"
-                            value={user.gender}
-                            onChange={(e) => handleChange(e as any)}
-                            style={{ 
-                                ...inputStyle, 
-                                backgroundColor: 'white'
-                            }}
-                        >
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Non-binary">Non-binary</option>
-                            <option value="Decline">Decline to Self-Identify</option>
-                        </select>
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Veteran Status */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                            Veteran Status
-                        </label>
-                        <select
-                            name="veteranStatus"
-                            value={user.veteranStatus}
-                            onChange={(e) => handleChange(e as any)}
-                            style={{ 
-                                ...inputStyle, 
-                                backgroundColor: 'white'
-                            }}
-                        >
-                            <option value="">Select Status</option>
-                            <option value="I am a veteran">I am a veteran</option>
-                            <option value="I am not a veteran">I am not a veteran</option>
-                            <option value="Decline">Decline to Self-Identify</option>
-                        </select>
+                    <div className="grid grid-cols-2 gap-5">
+                        <InputField label="First Name" name="firstName" value={user.firstName} onChange={handleChange} required error={validationErrors.firstName} />
+                        <InputField label="Last Name" name="lastName" value={user.lastName} onChange={handleChange} required error={validationErrors.lastName} />
+                        <InputField label="Role / Job Title" name="role" value={user.role} onChange={handleChange} icon={<Briefcase className="h-4 w-4" />} />
+                        <InputField label="Company" name="company" value={user.company} onChange={handleChange} />
+                        <InputField label="Email" name="email" value={user.email} onChange={handleChange} icon={<Mail className="h-4 w-4" />} required error={validationErrors.email} />
+                        <InputField label="Phone" name="phone" value={user.phone} onChange={handleChange} icon={<Phone className="h-4 w-4" />} error={validationErrors.phone} />
+                        <InputField label="Location" name="location" value={user.location} onChange={handleChange} icon={<MapPin className="h-4 w-4" />} />
+                        <InputField label="Website" name="website" value={user.website} onChange={handleChange} icon={<Globe className="h-4 w-4" />} />
                     </div>
 
-                    {/* Disability Status */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                            Disability Status
-                        </label>
-                        <select
-                            name="disabilityStatus"
-                            value={user.disabilityStatus}
-                            onChange={(e) => handleChange(e as any)}
-                            style={{ 
-                                ...inputStyle, 
-                                backgroundColor: 'white'
-                            }}
-                        >
-                            <option value="">Select Status</option>
-                            <option value="Yes, I have a disability">Yes, I have a disability</option>
-                            <option value="No, I do not have a disability">No, I do not have a disability</option>
-                            <option value="Decline">Decline to Self-Identify</option>
-                        </select>
+                    <div className="mt-5">
+                        <Label className="mb-2 block">Bio / Summary</Label>
+                        <Textarea
+                            name="bio"
+                            value={user.bio}
+                            onChange={handleChange}
+                            rows={4}
+                            placeholder="A brief summary about yourself that will be used for cover letters..."
+                        />
                     </div>
-                </div>
 
-                {/* Divider */}
-                <div style={{ margin: '28px 0 24px 0', height: '1px', backgroundColor: '#E5E7EB' }} />
+                    {/* Divider */}
+                    <div className="my-7 h-px bg-border" />
 
-                {/* Race & Ethnicity */}
-                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '20px' }}>
-                    Race & Ethnicity
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                        Race / Ethnicity
-                    </label>
-                    <select
-                        name="ethnicity"
-                        value={user.ethnicity}
-                        onChange={(e) => handleChange(e as any)}
-                        style={{ 
-                            ...inputStyle, 
-                            backgroundColor: 'white', 
-                            maxWidth: '400px'
-                        }}
-                    >
-                        <option value="">Select Ethnicity</option>
-                        <option value="Hispanic or Latino">Hispanic or Latino</option>
-                        <option value="White">White (Not Hispanic or Latino)</option>
-                        <option value="Black or African American">Black or African American (Not Hispanic or Latino)</option>
-                        <option value="Native Hawaiian or Other Pacific Islander">Native Hawaiian or Other Pacific Islander (Not Hispanic or Latino)</option>
-                        <option value="Asian">Asian (Not Hispanic or Latino)</option>
-                        <option value="American Indian or Alaska Native">American Indian or Alaska Native (Not Hispanic or Latino)</option>
-                        <option value="Two or More Races">Two or More Races (Not Hispanic or Latino)</option>
-                        <option value="Decline">Decline to Self-Identify</option>
-                    </select>
-                </div>
-            </form>
+                    {/* Voluntary Self-Identification */}
+                    <h3 className="text-base font-semibold text-foreground mb-5">
+                        Voluntary Self-Identification
+                    </h3>
+                    <div className="grid grid-cols-2 gap-5">
+                        <div className="flex flex-col gap-2">
+                            <Label>Gender</Label>
+                            <Select value={user.gender} onValueChange={(value) => setUser(prev => ({ ...prev, gender: value }))}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Male">Male</SelectItem>
+                                    <SelectItem value="Female">Female</SelectItem>
+                                    <SelectItem value="Non-binary">Non-binary</SelectItem>
+                                    <SelectItem value="Decline">Decline to Self-Identify</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label>Veteran Status</Label>
+                            <Select value={user.veteranStatus} onValueChange={(value) => setUser(prev => ({ ...prev, veteranStatus: value }))}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="I am a veteran">I am a veteran</SelectItem>
+                                    <SelectItem value="I am not a veteran">I am not a veteran</SelectItem>
+                                    <SelectItem value="Decline">Decline to Self-Identify</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label>Disability Status</Label>
+                            <Select value={user.disabilityStatus} onValueChange={(value) => setUser(prev => ({ ...prev, disabilityStatus: value }))}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Yes, I have a disability">Yes, I have a disability</SelectItem>
+                                    <SelectItem value="No, I do not have a disability">No, I do not have a disability</SelectItem>
+                                    <SelectItem value="Decline">Decline to Self-Identify</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="my-7 h-px bg-border" />
+
+                    {/* Race & Ethnicity */}
+                    <h3 className="text-base font-semibold text-foreground mb-5">
+                        Race & Ethnicity
+                    </h3>
+                    <div className="flex flex-col gap-2 max-w-[400px]">
+                        <Label>Race / Ethnicity</Label>
+                        <Select value={user.ethnicity} onValueChange={(value) => setUser(prev => ({ ...prev, ethnicity: value }))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Ethnicity" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Hispanic or Latino">Hispanic or Latino</SelectItem>
+                                <SelectItem value="White">White (Not Hispanic or Latino)</SelectItem>
+                                <SelectItem value="Black or African American">Black or African American (Not Hispanic or Latino)</SelectItem>
+                                <SelectItem value="Native Hawaiian or Other Pacific Islander">Native Hawaiian or Other Pacific Islander</SelectItem>
+                                <SelectItem value="Asian">Asian (Not Hispanic or Latino)</SelectItem>
+                                <SelectItem value="American Indian or Alaska Native">American Indian or Alaska Native</SelectItem>
+                                <SelectItem value="Two or More Races">Two or More Races (Not Hispanic or Latino)</SelectItem>
+                                <SelectItem value="Decline">Decline to Self-Identify</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </form>
+            </Card>
         </div>
     );
 
     const renderExperienceSection = () => (
-        <div style={cardStyle}>
-            <div style={sectionHeaderStyle}>
-                <h2 style={{ margin: 0 }}>Work Experience</h2>
-                <button onClick={() => setExperiences([...experiences, { title: '', company: '', startDate: '', endDate: '', description: '' }])}
-                    style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={16} /> Add Experience
-                </button>
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold text-foreground">Work Experience</h2>
+                <Button 
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setExperiences([...experiences, { title: '', company: '', startDate: '', endDate: '', description: '' }])}
+                >
+                    <Plus className="h-4 w-4 mr-1.5" /> Add Experience
+                </Button>
             </div>
 
             {experiences.length === 0 ? (
-                <p style={{ color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', padding: '40px 0' }}>
+                <p className="text-muted-foreground italic text-center py-10">
                     No work experience added. Upload a resume from the Profile tab or add manually.
                 </p>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="flex flex-col gap-4">
                     {experiences.map((exp, i) => (
-                        <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', position: 'relative' }}>
-                            <button onClick={() => setExperiences(experiences.filter((_, idx) => idx !== i))}
-                                style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                                <Trash2 size={16} />
-                            </button>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                                <input placeholder="Job Title" value={exp.title || ''} onChange={(e) => { const n = [...experiences]; n[i].title = e.target.value; setExperiences(n); }} style={inputStyle} />
-                                <input placeholder="Company" value={exp.company || ''} onChange={(e) => { const n = [...experiences]; n[i].company = e.target.value; setExperiences(n); }} style={inputStyle} />
-                                <input placeholder="Start Date" value={exp.startDate || ''} onChange={(e) => { const n = [...experiences]; n[i].startDate = e.target.value; setExperiences(n); }} style={inputStyle} />
-                                <input placeholder="End Date" value={exp.endDate || ''} onChange={(e) => { const n = [...experiences]; n[i].endDate = e.target.value; setExperiences(n); }} style={inputStyle} />
+                        <div key={i} className="p-4 bg-muted/50 rounded-xl relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setExperiences(experiences.filter((_, idx) => idx !== i))}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                <Input placeholder="Job Title" value={exp.title || ''} onChange={(e) => { const n = [...experiences]; n[i].title = e.target.value; setExperiences(n); }} />
+                                <Input placeholder="Company" value={exp.company || ''} onChange={(e) => { const n = [...experiences]; n[i].company = e.target.value; setExperiences(n); }} />
+                                <Input placeholder="Start Date" value={exp.startDate || ''} onChange={(e) => { const n = [...experiences]; n[i].startDate = e.target.value; setExperiences(n); }} />
+                                <Input placeholder="End Date" value={exp.endDate || ''} onChange={(e) => { const n = [...experiences]; n[i].endDate = e.target.value; setExperiences(n); }} />
                             </div>
-                            <textarea placeholder="Description, achievements, responsibilities..." value={exp.description || ''} onChange={(e) => { const n = [...experiences]; n[i].description = e.target.value; setExperiences(n); }} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                            <Textarea placeholder="Description, achievements, responsibilities..." value={exp.description || ''} onChange={(e) => { const n = [...experiences]; n[i].description = e.target.value; setExperiences(n); }} rows={3} />
                         </div>
                     ))}
                 </div>
             )}
-        </div>
+        </Card>
     );
 
     const renderEducationSection = () => (
-        <div style={cardStyle}>
-            <div style={sectionHeaderStyle}>
-                <h2 style={{ margin: 0 }}>Education</h2>
-                <button onClick={() => setEducations([...educations, { institution: '', degree: '', fieldOfStudy: '', startDate: '', endDate: '', gpa: '' }])}
-                    style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={16} /> Add Education
-                </button>
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold text-foreground">Education</h2>
+                <Button 
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setEducations([...educations, { institution: '', degree: '', fieldOfStudy: '', startDate: '', endDate: '', gpa: '' }])}
+                >
+                    <Plus className="h-4 w-4 mr-1.5" /> Add Education
+                </Button>
             </div>
 
             {educations.length === 0 ? (
-                <p style={{ color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', padding: '40px 0' }}>
+                <p className="text-muted-foreground italic text-center py-10">
                     No education added yet. Add your degrees, courses, and certifications.
                 </p>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="flex flex-col gap-4">
                     {educations.map((edu, i) => (
-                        <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', position: 'relative' }}>
-                            <button onClick={() => setEducations(educations.filter((_, idx) => idx !== i))}
-                                style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                                <Trash2 size={16} />
-                            </button>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <input placeholder="Institution" value={edu.institution || ''} onChange={(e) => { const n = [...educations]; n[i].institution = e.target.value; setEducations(n); }} style={inputStyle} />
-                                <input placeholder="Degree" value={edu.degree || ''} onChange={(e) => { const n = [...educations]; n[i].degree = e.target.value; setEducations(n); }} style={inputStyle} />
-                                <input placeholder="Field of Study" value={edu.fieldOfStudy || ''} onChange={(e) => { const n = [...educations]; n[i].fieldOfStudy = e.target.value; setEducations(n); }} style={inputStyle} />
-                                <input placeholder="GPA (optional)" value={edu.gpa || ''} onChange={(e) => { const n = [...educations]; n[i].gpa = e.target.value; setEducations(n); }} style={inputStyle} />
-                                <input placeholder="Start Date" value={edu.startDate || ''} onChange={(e) => { const n = [...educations]; n[i].startDate = e.target.value; setEducations(n); }} style={inputStyle} />
-                                <input placeholder="End Date" value={edu.endDate || ''} onChange={(e) => { const n = [...educations]; n[i].endDate = e.target.value; setEducations(n); }} style={inputStyle} />
+                        <div key={i} className="p-4 bg-muted/50 rounded-xl relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setEducations(educations.filter((_, idx) => idx !== i))}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Input placeholder="Institution" value={edu.institution || ''} onChange={(e) => { const n = [...educations]; n[i].institution = e.target.value; setEducations(n); }} />
+                                <Input placeholder="Degree" value={edu.degree || ''} onChange={(e) => { const n = [...educations]; n[i].degree = e.target.value; setEducations(n); }} />
+                                <Input placeholder="Field of Study" value={edu.fieldOfStudy || ''} onChange={(e) => { const n = [...educations]; n[i].fieldOfStudy = e.target.value; setEducations(n); }} />
+                                <Input placeholder="GPA (optional)" value={edu.gpa || ''} onChange={(e) => { const n = [...educations]; n[i].gpa = e.target.value; setEducations(n); }} />
+                                <Input placeholder="Start Date" value={edu.startDate || ''} onChange={(e) => { const n = [...educations]; n[i].startDate = e.target.value; setEducations(n); }} />
+                                <Input placeholder="End Date" value={edu.endDate || ''} onChange={(e) => { const n = [...educations]; n[i].endDate = e.target.value; setEducations(n); }} />
                             </div>
                         </div>
                     ))}
                 </div>
             )}
-        </div>
+        </Card>
     );
 
     const renderSkillsSection = () => (
-        <div style={cardStyle}>
-            <div style={sectionHeaderStyle}>
-                <h2 style={{ margin: 0 }}>Skills</h2>
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold text-foreground">Skills</h2>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                <input
+            <div className="flex gap-2 mb-5">
+                <Input
                     type="text"
                     placeholder="Add a skill (e.g., React, Python, Project Management)"
                     value={newSkill}
@@ -1345,149 +1188,168 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                             setNewSkill('');
                         }
                     }}
-                    style={{ ...inputStyle, flex: 1 }}
+                    className="flex-1"
                 />
-                <button onClick={() => {
+                <Button onClick={() => {
                     if (newSkill.trim()) {
                         setSkills([...skills, newSkill.trim()]);
                         setNewSkill('');
                     }
-                }} style={{ backgroundColor: '#2563EB', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '500', cursor: 'pointer' }}>
+                }}>
                     Add
-                </button>
+                </Button>
             </div>
 
             {skills.length === 0 ? (
-                <p style={{ color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>
+                <p className="text-muted-foreground italic text-center py-5">
                     No skills added. Add your technical and soft skills.
                 </p>
             ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <div className="flex flex-wrap gap-2">
                     {skills.map((skill, i) => (
-                        <span key={i} style={{
-                            backgroundColor: '#EEF2FF', color: '#4F46E5', padding: '6px 12px',
-                            borderRadius: '20px', fontSize: '14px', fontWeight: '500',
-                            display: 'flex', alignItems: 'center', gap: '6px'
-                        }}>
+                        <Badge key={i} variant="secondary" className="py-1.5 px-3 gap-1.5">
                             {skill}
-                            <button onClick={() => setSkills(skills.filter((_, idx) => idx !== i))}
-                                style={{ background: 'none', border: 'none', color: '#4F46E5', cursor: 'pointer', padding: 0, display: 'flex' }}>
-                                <X size={14} />
+                            <button 
+                                onClick={() => setSkills(skills.filter((_, idx) => idx !== i))}
+                                className="hover:text-destructive"
+                            >
+                                <X className="h-3.5 w-3.5" />
                             </button>
-                        </span>
+                        </Badge>
                     ))}
                 </div>
             )}
-        </div>
+        </Card>
     );
 
     const renderProjectsSection = () => (
-        <div style={cardStyle}>
-            <div style={sectionHeaderStyle}>
-                <h2 style={{ margin: 0 }}>Projects</h2>
-                <button onClick={() => setProjects([...projects, { name: '', description: '', url: '', technologies: [] }])}
-                    style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={16} /> Add Project
-                </button>
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold text-foreground">Projects</h2>
+                <Button 
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setProjects([...projects, { name: '', description: '', url: '', technologies: [] }])}
+                >
+                    <Plus className="h-4 w-4 mr-1.5" /> Add Project
+                </Button>
             </div>
 
             {projects.length === 0 ? (
-                <p style={{ color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', padding: '40px 0' }}>
+                <p className="text-muted-foreground italic text-center py-10">
                     No projects added. Showcase your side projects, open source contributions, or portfolio pieces.
                 </p>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="flex flex-col gap-4">
                     {projects.map((proj, i) => (
-                        <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', position: 'relative' }}>
-                            <button onClick={() => setProjects(projects.filter((_, idx) => idx !== i))}
-                                style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                                <Trash2 size={16} />
-                            </button>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                                <input placeholder="Project Name" value={proj.name || ''} onChange={(e) => { const n = [...projects]; n[i].name = e.target.value; setProjects(n); }} style={inputStyle} />
-                                <input placeholder="URL (optional)" value={proj.url || ''} onChange={(e) => { const n = [...projects]; n[i].url = e.target.value; setProjects(n); }} style={inputStyle} />
+                        <div key={i} className="p-4 bg-muted/50 rounded-xl relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setProjects(projects.filter((_, idx) => idx !== i))}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                <Input placeholder="Project Name" value={proj.name || ''} onChange={(e) => { const n = [...projects]; n[i].name = e.target.value; setProjects(n); }} />
+                                <Input placeholder="URL (optional)" value={proj.url || ''} onChange={(e) => { const n = [...projects]; n[i].url = e.target.value; setProjects(n); }} />
                             </div>
-                            <textarea placeholder="Describe what you built, the problem you solved, and the impact..." value={proj.description || ''} onChange={(e) => { const n = [...projects]; n[i].description = e.target.value; setProjects(n); }} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                            <Textarea placeholder="Describe what you built, the problem you solved, and the impact..." value={proj.description || ''} onChange={(e) => { const n = [...projects]; n[i].description = e.target.value; setProjects(n); }} rows={3} />
                         </div>
                     ))}
                 </div>
             )}
-        </div>
+        </Card>
     );
 
     const renderCertificationsSection = () => (
-        <div style={cardStyle}>
-            <div style={sectionHeaderStyle}>
-                <h2 style={{ margin: 0 }}>Certifications</h2>
-                <button onClick={() => setCertifications([...certifications, { name: '', issuer: '', issueDate: '', expirationDate: '', credentialId: '' }])}
-                    style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={16} /> Add Certification
-                </button>
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold text-foreground">Certifications</h2>
+                <Button 
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setCertifications([...certifications, { name: '', issuer: '', issueDate: '', expirationDate: '', credentialId: '' }])}
+                >
+                    <Plus className="h-4 w-4 mr-1.5" /> Add Certification
+                </Button>
             </div>
 
             {certifications.length === 0 ? (
-                <p style={{ color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', padding: '40px 0' }}>
+                <p className="text-muted-foreground italic text-center py-10">
                     No certifications added. Add AWS, Google, Microsoft, or other professional credentials.
                 </p>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="flex flex-col gap-4">
                     {certifications.map((cert, i) => (
-                        <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', position: 'relative' }}>
-                            <button onClick={() => setCertifications(certifications.filter((_, idx) => idx !== i))}
-                                style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                                <Trash2 size={16} />
-                            </button>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <input placeholder="Certification Name" value={cert.name || ''} onChange={(e) => { const n = [...certifications]; n[i].name = e.target.value; setCertifications(n); }} style={inputStyle} />
-                                <input placeholder="Issuing Organization" value={cert.issuer || ''} onChange={(e) => { const n = [...certifications]; n[i].issuer = e.target.value; setCertifications(n); }} style={inputStyle} />
-                                <input placeholder="Issue Date" value={cert.issueDate || ''} onChange={(e) => { const n = [...certifications]; n[i].issueDate = e.target.value; setCertifications(n); }} style={inputStyle} />
-                                <input placeholder="Expiration Date (optional)" value={cert.expirationDate || ''} onChange={(e) => { const n = [...certifications]; n[i].expirationDate = e.target.value; setCertifications(n); }} style={inputStyle} />
-                                <input placeholder="Credential ID (optional)" value={cert.credentialId || ''} onChange={(e) => { const n = [...certifications]; n[i].credentialId = e.target.value; setCertifications(n); }} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
+                        <div key={i} className="p-4 bg-muted/50 rounded-xl relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setCertifications(certifications.filter((_, idx) => idx !== i))}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Input placeholder="Certification Name" value={cert.name || ''} onChange={(e) => { const n = [...certifications]; n[i].name = e.target.value; setCertifications(n); }} />
+                                <Input placeholder="Issuing Organization" value={cert.issuer || ''} onChange={(e) => { const n = [...certifications]; n[i].issuer = e.target.value; setCertifications(n); }} />
+                                <Input placeholder="Issue Date" value={cert.issueDate || ''} onChange={(e) => { const n = [...certifications]; n[i].issueDate = e.target.value; setCertifications(n); }} />
+                                <Input placeholder="Expiration Date (optional)" value={cert.expirationDate || ''} onChange={(e) => { const n = [...certifications]; n[i].expirationDate = e.target.value; setCertifications(n); }} />
+                                <Input placeholder="Credential ID (optional)" value={cert.credentialId || ''} onChange={(e) => { const n = [...certifications]; n[i].credentialId = e.target.value; setCertifications(n); }} className="col-span-2" />
                             </div>
                         </div>
                     ))}
                 </div>
             )}
-        </div>
+        </Card>
     );
 
     const renderAccomplishmentsSection = () => (
-        <div style={cardStyle}>
-            <div style={sectionHeaderStyle}>
-                <h2 style={{ margin: 0 }}>Accomplishments</h2>
-                <button onClick={() => setAccomplishments([...accomplishments, { title: '', description: '', date: '', metric: '' }])}
-                    style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={16} /> Add Accomplishment
-                </button>
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold text-foreground">Accomplishments</h2>
+                <Button 
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setAccomplishments([...accomplishments, { title: '', description: '', date: '', metric: '' }])}
+                >
+                    <Plus className="h-4 w-4 mr-1.5" /> Add Accomplishment
+                </Button>
             </div>
 
-            <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '20px' }}>
+            <p className="text-sm text-muted-foreground mb-5">
                 💡 <strong>Pro tip:</strong> Include quantifiable achievements like "Increased sales by 30%" or "Reduced load time by 2 seconds" - these make your resume stand out!
             </p>
 
             {accomplishments.length === 0 ? (
-                <p style={{ color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', padding: '40px 0' }}>
+                <p className="text-muted-foreground italic text-center py-10">
                     No accomplishments added. Add awards, recognition, or measurable achievements.
                 </p>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="flex flex-col gap-4">
                     {accomplishments.map((acc, i) => (
-                        <div key={i} style={{ padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', position: 'relative' }}>
-                            <button onClick={() => setAccomplishments(accomplishments.filter((_, idx) => idx !== i))}
-                                style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                                <Trash2 size={16} />
-                            </button>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                                <input placeholder="Title (e.g., Employee of the Month)" value={acc.title || ''} onChange={(e) => { const n = [...accomplishments]; n[i].title = e.target.value; setAccomplishments(n); }} style={inputStyle} />
-                                <input placeholder="Date" value={acc.date || ''} onChange={(e) => { const n = [...accomplishments]; n[i].date = e.target.value; setAccomplishments(n); }} style={inputStyle} />
+                        <div key={i} className="p-4 bg-muted/50 rounded-xl relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setAccomplishments(accomplishments.filter((_, idx) => idx !== i))}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                <Input placeholder="Title (e.g., Employee of the Month)" value={acc.title || ''} onChange={(e) => { const n = [...accomplishments]; n[i].title = e.target.value; setAccomplishments(n); }} />
+                                <Input placeholder="Date" value={acc.date || ''} onChange={(e) => { const n = [...accomplishments]; n[i].date = e.target.value; setAccomplishments(n); }} />
                             </div>
-                            <input placeholder="Key Metric (e.g., Increased revenue by 25%)" value={acc.metric || ''} onChange={(e) => { const n = [...accomplishments]; n[i].metric = e.target.value; setAccomplishments(n); }} style={{ ...inputStyle, marginBottom: '12px' }} />
-                            <textarea placeholder="Description of the achievement..." value={acc.description || ''} onChange={(e) => { const n = [...accomplishments]; n[i].description = e.target.value; setAccomplishments(n); }} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+                            <Input placeholder="Key Metric (e.g., Increased revenue by 25%)" value={acc.metric || ''} onChange={(e) => { const n = [...accomplishments]; n[i].metric = e.target.value; setAccomplishments(n); }} className="mb-3" />
+                            <Textarea placeholder="Description of the achievement..." value={acc.description || ''} onChange={(e) => { const n = [...accomplishments]; n[i].description = e.target.value; setAccomplishments(n); }} rows={2} />
                         </div>
                     ))}
                 </div>
             )}
-        </div>
+        </Card>
     );
 
     const renderActiveSection = () => {
@@ -1507,35 +1369,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
     // Loading state
     if (isLoading) {
         return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '400px',
-                gap: '12px',
-                color: '#6B7280',
-            }}>
-                <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
+            <div className="flex items-center justify-center min-h-[400px] gap-3 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin" />
                 <span>Loading profile...</span>
             </div>
         );
     }
 
     return (
-        <div style={{ display: 'flex', gap: '30px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="flex gap-8 max-w-[1200px] mx-auto">
 
             {/* Side Navigation */}
-            <div style={{ width: '260px', flexShrink: 0 }}>
-                <div style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    padding: '12px',
-                    position: 'sticky',
-                    top: '20px'
-                }}>
-                    <div style={{ padding: '12px 16px', marginBottom: '8px' }}>
-                        <h3 style={{ fontSize: '12px', fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            <div className="w-[260px] flex-shrink-0">
+                <Card className="p-3 sticky top-5">
+                    <div className="px-4 py-3 mb-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             My Profile
                         </h3>
                     </div>
@@ -1544,94 +1392,62 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                         <button
                             key={item.id}
                             onClick={() => setActiveSection(item.id)}
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                padding: '12px 16px',
-                                border: 'none',
-                                borderRadius: '10px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                backgroundColor: activeSection === item.id ? '#EEF2FF' : 'transparent',
-                                color: activeSection === item.id ? '#4F46E5' : '#374151',
-                                textAlign: 'left'
-                            }}
+                            className={cn(
+                                "w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all text-left",
+                                activeSection === item.id 
+                                    ? "bg-primary/5 text-primary" 
+                                    : "text-foreground hover:bg-muted"
+                            )}
                         >
-                            <div style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '8px',
-                                backgroundColor: activeSection === item.id ? '#4F46E5' : '#F3F4F6',
-                                color: activeSection === item.id ? 'white' : '#6B7280',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
+                            <div className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center",
+                                activeSection === item.id 
+                                    ? "bg-primary text-primary-foreground" 
+                                    : "bg-muted text-muted-foreground"
+                            )}>
                                 {item.icon}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '14px', fontWeight: '500' }}>{item.label}</div>
-                                <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>{item.description}</div>
+                            <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium">{item.label}</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
                             </div>
-                            {activeSection === item.id && <ChevronRight size={16} style={{ color: '#4F46E5' }} />}
+                            {activeSection === item.id && <ChevronRight className="h-4 w-4 text-primary" />}
                         </button>
                     ))}
-                </div>
+                </Card>
             </div>
 
             {/* Main Content */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="flex-1 min-w-0">
                 {/* Header */}
-                <div style={{ position: 'relative', marginBottom: '30px' }}>
-                    <div style={{
-                        height: '120px',
-                        backgroundColor: '#dcebf7',
-                        borderRadius: '16px',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}>
-                        <div style={{ position: 'absolute', top: -20, left: -20, width: 150, height: 150, background: '#cfe2f3', borderRadius: '50%', opacity: 0.6 }} />
-                        <div style={{ position: 'absolute', top: 20, right: '10%', width: 200, height: 200, background: '#e3f0fa', borderRadius: '50%', opacity: 0.8 }} />
+                <div className="relative mb-8">
+                    <div className="h-[120px] bg-gradient-to-r from-blue-100 to-blue-50 rounded-2xl relative overflow-hidden">
+                        <div className="absolute -top-5 -left-5 w-[150px] h-[150px] bg-blue-200 rounded-full opacity-60" />
+                        <div className="absolute top-5 right-[10%] w-[200px] h-[200px] bg-blue-100 rounded-full opacity-80" />
                     </div>
 
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '-35px',
-                        left: '24px',
-                        width: '80px',
-                        height: '80px',
-                        borderRadius: '50%',
-                        backgroundColor: 'white',
-                        padding: '3px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}>
-                        <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', position: 'relative' }}>
-                            <img src={user.avatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="absolute -bottom-9 left-6 w-20 h-20 rounded-full bg-background p-[3px] shadow-md">
+                        <div className="w-full h-full rounded-full overflow-hidden">
+                            <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
                         </div>
                     </div>
 
-                    <div style={{ marginLeft: '120px', marginTop: '8px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <div className="ml-[120px] mt-2 flex items-start justify-between">
                         <div>
-                            <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{user.firstName} {user.lastName}</h1>
+                            <h1 className="text-xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
                             {(user.role || user.company) && (
-                                <p style={{ color: '#6B7280', margin: '2px 0 0 0', fontSize: '14px' }}>
+                                <p className="text-sm text-muted-foreground mt-0.5">
                                     {user.role}{user.role && user.company ? ' at ' : ''}{user.company}
                                 </p>
                             )}
                         </div>
                         
-                        {/* Resume Profile Selector - Subtle */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ 
-                                fontSize: '12px', 
-                                color: '#9CA3AF',
-                                whiteSpace: 'nowrap'
-                            }}>
+                        {/* Resume Profile Selector */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 Profile:
                             </span>
-                            <div style={{ width: '160px' }}>
+                            <div className="w-40">
                                 <ProfileSelector
                                     profiles={resumeProfiles}
                                     selectedProfileId={activeResumeProfileId}
@@ -1646,7 +1462,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                 </div>
 
                 {/* Active Section Content */}
-                <div style={{ marginTop: '20px' }}>
+                <div className="mt-5">
                     {renderActiveSection()}
                 </div>
             </div>
@@ -1664,31 +1480,33 @@ const InputField = ({ label, name, value, onChange, icon, error, required }: {
     error?: string;
     required?: boolean;
 }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+    <div className="flex flex-col gap-2">
+        <Label className="text-sm font-medium text-foreground">
             {label}
-            {required && <span style={{ color: '#DC2626', marginLeft: '4px' }}>*</span>}
-        </label>
-        <div style={{ position: 'relative' }}>
-            {icon && <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: error ? '#DC2626' : '#9CA3AF' }}>{icon}</div>}
-            <input
+            {required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        <div className="relative">
+            {icon && (
+                <div className={cn(
+                    "absolute left-3 top-1/2 -translate-y-1/2",
+                    error ? "text-destructive" : "text-muted-foreground"
+                )}>
+                    {icon}
+                </div>
+            )}
+            <Input
                 type="text"
                 name={name}
                 value={value}
                 onChange={onChange}
-                style={{ 
-                    width: '100%', 
-                    padding: icon ? '10px 10px 10px 36px' : '10px 12px', 
-                    borderRadius: '8px', 
-                    border: error ? '1px solid #DC2626' : '1px solid #E5E7EB', 
-                    outline: 'none', 
-                    fontSize: '14px',
-                    backgroundColor: error ? '#FEF2F2' : 'white'
-                }}
+                className={cn(
+                    icon && "pl-9",
+                    error && "border-destructive bg-destructive/10"
+                )}
             />
         </div>
         {error && (
-            <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '-4px' }}>{error}</span>
+            <span className="text-xs text-destructive -mt-1">{error}</span>
         )}
     </div>
 );
