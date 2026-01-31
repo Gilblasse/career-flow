@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { X, FileText, Image, File } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
+import { FileText, Image, File } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +14,7 @@ interface JobDetailModalProps {
 
 const JobDetailModal: React.FC<JobDetailModalProps> = ({ task, onClose }) => {
     return (
-        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+        <Dialog open={true} onOpenChange={(open: boolean) => !open && onClose()}>
             <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 gap-0">
                 {/* Header */}
                 <DialogHeader className="p-6 border-b">

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { UserProfile, ResumeProfile, Experience } from '../../types';
 import {
-    analyzeDescriptionPattern,
-    extractBulletsFromDescription,
     isDescriptionParagraph,
     normalizeBullets
 } from '../../utils/text-processing';
@@ -28,7 +26,6 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 interface ResumePageProps {
@@ -146,9 +143,6 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
     }, [profileData, onRefreshProfile]);
 
     const applyProfileData = (data: any) => {
-        // Analyze pattern across all experiences for backward compat
-        const dominantPattern = analyzeDescriptionPattern(data.experience || []);
-
         // Map backend field names and normalize bullets for main profile
         const mainExperiences = (data.experience || []).map((exp: any) => {
             return {

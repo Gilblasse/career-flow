@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { colors, spacing, radius, shadows, transitions, gradients } from './tokens';
+import { colors, spacing, shadows, transitions, gradients } from './tokens';
 
 type CSSProperties = React.CSSProperties;
 

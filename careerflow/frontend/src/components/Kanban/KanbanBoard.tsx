@@ -308,7 +308,7 @@ const KanbanBoard: React.FC = () => {
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenuContent align="end" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                                     {COLUMNS.filter(c => c.id !== column.id).map(targetCol => (
                                                         <DropdownMenuItem
                                                             key={targetCol.id}
@@ -532,7 +532,7 @@ const KanbanBoard: React.FC = () => {
             )}
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+            <Dialog open={!!taskToDelete} onOpenChange={(open: boolean) => !open && setTaskToDelete(null)}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Confirm Removal</DialogTitle>

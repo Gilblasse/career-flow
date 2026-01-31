@@ -3,13 +3,6 @@ import type { ResumeProfile, Experience, Education } from '../../types';
 import { RESUME_PROFILE_MAX_COUNT } from '../../types';
 import { ProfileSelector, validateProfileName } from './ProfileSelector';
 import { 
-    colors, 
-    typography, 
-    spacing, 
-    radius, 
-    shadows 
-} from '../../styles/tokens';
-import { 
     ArrowLeft, 
     Save, 
     FileText, 
@@ -18,6 +11,11 @@ import {
     CheckCircle,
     Loader2
 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface ResumeSnapshot {
     experience: Experience[];
@@ -162,25 +160,14 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
         return (
             <span>
                 {words.map((w, i) => {
-                    let style: React.CSSProperties = {};
+                    let className = '';
                     if (w.type === 'removed') {
-                        style = {
-                            backgroundColor: colors.error[100],
-                            color: colors.error[800],
-                            textDecoration: 'line-through',
-                            padding: '1px 3px',
-                            borderRadius: '3px',
-                        };
+                        className = 'bg-red-100 text-red-800 line-through px-1 rounded';
                     } else if (w.type === 'added') {
-                        style = {
-                            backgroundColor: colors.success[100],
-                            color: colors.success[800],
-                            padding: '1px 3px',
-                            borderRadius: '3px',
-                        };
+                        className = 'bg-green-100 text-green-800 px-1 rounded';
                     }
                     return (
-                        <span key={i} style={style}>
+                        <span key={i} className={className}>
                             {w.text}{' '}
                         </span>
                     );
@@ -218,17 +205,17 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
             const updBullets: string[] = (upd as any)?.bullets || [];
             
             items.push(
-                <div key={i} style={styles.comparisonRow}>
+                <div key={i} className="grid grid-cols-[1fr_40px_1fr] gap-4 mb-5">
                     {/* Original */}
-                    <div style={{
-                        ...styles.comparisonCell,
-                        backgroundColor: hasChanges ? colors.error[50] : colors.gray[50],
-                    }}>
+                    <div className={cn(
+                        "p-5 rounded-lg border border-border",
+                        hasChanges ? "bg-red-50" : "bg-muted/50"
+                    )}>
                         {orig ? (
                             <>
-                                <div style={styles.expTitle}>{orig.title}</div>
-                                <div style={styles.expCompany}>{orig.company}</div>
-                                <div style={styles.expDate}>
+                                <div className="text-base font-semibold text-foreground mb-1">{orig.title}</div>
+                                <div className="text-sm text-muted-foreground mb-1">{orig.company}</div>
+                                <div className="text-xs text-muted-foreground mb-3">
                                     {orig.startDate} - {orig.endDate || 'Present'}
                                 </div>
                                 {origBullets.slice(0, 5).map((b: string, bi: number) => {
@@ -237,49 +224,44 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                                     if (bulletChanged && updBullet) {
                                         const { origDiff } = computeWordDiff(b, updBullet);
                                         return (
-                                            <div key={bi} style={styles.bullet}>
+                                            <div key={bi} className="text-sm text-muted-foreground mb-2 pl-3 leading-relaxed">
                                                 • {renderDiffText(origDiff, 'original')}
                                             </div>
                                         );
                                     }
                                     return (
-                                        <div key={bi} style={{
-                                            ...styles.bullet,
-                                            ...(bi >= updBullets.length ? {
-                                                backgroundColor: colors.error[100],
-                                                borderRadius: '4px',
-                                                textDecoration: 'line-through',
-                                                color: colors.error[700],
-                                            } : {}),
-                                        }}>• {b}</div>
+                                        <div key={bi} className={cn(
+                                            "text-sm text-muted-foreground mb-2 pl-3 leading-relaxed",
+                                            bi >= updBullets.length && "bg-red-100 rounded line-through text-red-700"
+                                        )}>• {b}</div>
                                     );
                                 })}
                                 {origBullets.length > 5 && (
-                                    <div style={styles.moreItems}>
+                                    <div className="text-xs text-muted-foreground italic mt-2">
                                         +{origBullets.length - 5} more bullets
                                     </div>
                                 )}
                             </>
                         ) : (
-                            <div style={styles.emptyCell}>No experience</div>
+                            <div className="text-sm text-muted-foreground italic">No experience</div>
                         )}
                     </div>
                     
                     {/* Arrow */}
-                    <div style={styles.arrowCell}>
-                        <ChevronRight size={20} color={colors.gray[400]} />
+                    <div className="flex items-center justify-center">
+                        <ChevronRight size={20} className="text-muted-foreground" />
                     </div>
                     
                     {/* Updated */}
-                    <div style={{
-                        ...styles.comparisonCell,
-                        backgroundColor: hasChanges ? colors.success[50] : colors.gray[50],
-                    }}>
+                    <div className={cn(
+                        "p-5 rounded-lg border border-border",
+                        hasChanges ? "bg-green-50" : "bg-muted/50"
+                    )}>
                         {upd ? (
                             <>
-                                <div style={styles.expTitle}>{upd.title}</div>
-                                <div style={styles.expCompany}>{upd.company}</div>
-                                <div style={styles.expDate}>
+                                <div className="text-base font-semibold text-foreground mb-1">{upd.title}</div>
+                                <div className="text-sm text-muted-foreground mb-1">{upd.company}</div>
+                                <div className="text-xs text-muted-foreground mb-3">
                                     {upd.startDate} - {upd.endDate || 'Present'}
                                 </div>
                                 {updBullets.slice(0, 5).map((b: string, bi: number) => {
@@ -288,30 +270,26 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                                     if (bulletChanged && origBullet) {
                                         const { updDiff } = computeWordDiff(origBullet, b);
                                         return (
-                                            <div key={bi} style={styles.bullet}>
+                                            <div key={bi} className="text-sm text-muted-foreground mb-2 pl-3 leading-relaxed">
                                                 • {renderDiffText(updDiff, 'updated')}
                                             </div>
                                         );
                                     }
                                     return (
-                                        <div key={bi} style={{
-                                            ...styles.bullet,
-                                            ...(bi >= origBullets.length ? {
-                                                backgroundColor: colors.success[100],
-                                                borderRadius: '4px',
-                                                color: colors.success[700],
-                                            } : {}),
-                                        }}>• {b}</div>
+                                        <div key={bi} className={cn(
+                                            "text-sm text-muted-foreground mb-2 pl-3 leading-relaxed",
+                                            bi >= origBullets.length && "bg-green-100 rounded text-green-700"
+                                        )}>• {b}</div>
                                     );
                                 })}
                                 {updBullets.length > 5 && (
-                                    <div style={styles.moreItems}>
+                                    <div className="text-xs text-muted-foreground italic mt-2">
                                         +{updBullets.length - 5} more bullets
                                     </div>
                                 )}
                             </>
                         ) : (
-                            <div style={styles.emptyCell}>Removed</div>
+                            <div className="text-sm text-muted-foreground italic">Removed</div>
                         )}
                     </div>
                 </div>
@@ -327,48 +305,45 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
         const added = updated.filter(s => !original.includes(s));
         
         return (
-            <div style={styles.comparisonRow}>
-                <div style={{
-                    ...styles.comparisonCell,
-                    backgroundColor: removed.length > 0 ? colors.error[50] : colors.gray[50],
-                }}>
-                    <div style={styles.skillsGrid}>
+            <div className="grid grid-cols-[1fr_40px_1fr] gap-4 mb-5">
+                <div className={cn(
+                    "p-5 rounded-lg border border-border",
+                    removed.length > 0 ? "bg-red-50" : "bg-muted/50"
+                )}>
+                    <div className="flex flex-wrap gap-2">
                         {original.map((skill, i) => (
-                            <span 
-                                key={i} 
-                                style={{
-                                    ...styles.skillTag,
-                                    backgroundColor: removed.includes(skill) ? colors.error[100] : colors.gray[200],
-                                    color: removed.includes(skill) ? colors.error[700] : colors.gray[700],
-                                    textDecoration: removed.includes(skill) ? 'line-through' : 'none',
-                                }}
+                            <Badge 
+                                key={i}
+                                variant={removed.includes(skill) ? "destructive" : "secondary"}
+                                className={cn(
+                                    removed.includes(skill) && "line-through"
+                                )}
                             >
                                 {skill}
-                            </span>
+                            </Badge>
                         ))}
                     </div>
                 </div>
                 
-                <div style={styles.arrowCell}>
-                    <ChevronRight size={20} color={colors.gray[400]} />
+                <div className="flex items-center justify-center">
+                    <ChevronRight size={20} className="text-muted-foreground" />
                 </div>
                 
-                <div style={{
-                    ...styles.comparisonCell,
-                    backgroundColor: added.length > 0 ? colors.success[50] : colors.gray[50],
-                }}>
-                    <div style={styles.skillsGrid}>
+                <div className={cn(
+                    "p-5 rounded-lg border border-border",
+                    added.length > 0 ? "bg-green-50" : "bg-muted/50"
+                )}>
+                    <div className="flex flex-wrap gap-2">
                         {updated.map((skill, i) => (
-                            <span 
-                                key={i} 
-                                style={{
-                                    ...styles.skillTag,
-                                    backgroundColor: added.includes(skill) ? colors.success[100] : colors.gray[200],
-                                    color: added.includes(skill) ? colors.success[700] : colors.gray[700],
-                                }}
+                            <Badge 
+                                key={i}
+                                variant={added.includes(skill) ? "default" : "secondary"}
+                                className={cn(
+                                    added.includes(skill) && "bg-green-100 text-green-700 hover:bg-green-100"
+                                )}
                             >
                                 {skill}
-                            </span>
+                            </Badge>
                         ))}
                     </div>
                 </div>
@@ -376,301 +351,18 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
         );
     };
 
-    const styles: Record<string, React.CSSProperties> = {
-        container: {
-            maxWidth: '1600px',
-            margin: '0 auto',
-            padding: spacing[8],
-        },
-        header: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: spacing[9],
-            paddingBottom: spacing[7],
-            borderBottom: `1px solid ${colors.border.default}`,
-        },
-        headerLeft: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[5],
-        },
-        backButton: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-            padding: `${spacing[3]} ${spacing[5]}`,
-            backgroundColor: 'transparent',
-            border: `1px solid ${colors.border.default}`,
-            borderRadius: radius.lg,
-            color: colors.text.secondary,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.medium,
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-        },
-        title: {
-            fontSize: typography.fontSize['3xl'],
-            fontWeight: typography.fontWeight.bold,
-            color: colors.text.primary,
-            margin: 0,
-        },
-        subtitle: {
-            fontSize: typography.fontSize.base,
-            color: colors.text.muted,
-            margin: `${spacing[2]} 0 0`,
-        },
-        mainContent: {
-            display: 'grid',
-            gridTemplateColumns: '1fr 360px',
-            gap: spacing[9],
-        },
-        comparisonSection: {
-            backgroundColor: colors.background.card,
-            borderRadius: radius['2xl'],
-            border: `1px solid ${colors.border.light}`,
-            boxShadow: shadows.sm,
-            overflow: 'hidden',
-        },
-        sectionHeader: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: spacing[7],
-            borderBottom: `1px solid ${colors.border.light}`,
-            backgroundColor: colors.gray[50],
-        },
-        sectionTitle: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[3],
-            fontSize: typography.fontSize.lg,
-            fontWeight: typography.fontWeight.semibold,
-            color: colors.text.primary,
-            margin: 0,
-        },
-        columnHeaders: {
-            display: 'grid',
-            gridTemplateColumns: '1fr 40px 1fr',
-            gap: spacing[4],
-            padding: `${spacing[4]} ${spacing[7]}`,
-            backgroundColor: colors.gray[100],
-            borderBottom: `1px solid ${colors.border.light}`,
-        },
-        columnLabel: {
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.medium,
-            color: colors.text.muted,
-            textTransform: 'uppercase' as const,
-            letterSpacing: typography.letterSpacing.wide,
-        },
-        comparisonContent: {
-            padding: spacing[7],
-        },
-        comparisonRow: {
-            display: 'grid',
-            gridTemplateColumns: '1fr 40px 1fr',
-            gap: spacing[4],
-            marginBottom: spacing[5],
-        },
-        comparisonCell: {
-            padding: spacing[5],
-            borderRadius: radius.lg,
-            border: `1px solid ${colors.border.light}`,
-        },
-        arrowCell: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        expTitle: {
-            fontSize: typography.fontSize.base,
-            fontWeight: typography.fontWeight.semibold,
-            color: colors.text.primary,
-            marginBottom: spacing[1],
-        },
-        expCompany: {
-            fontSize: typography.fontSize.sm,
-            color: colors.text.secondary,
-            marginBottom: spacing[1],
-        },
-        expDate: {
-            fontSize: typography.fontSize.xs,
-            color: colors.text.muted,
-            marginBottom: spacing[3],
-        },
-        bullet: {
-            fontSize: typography.fontSize.sm,
-            color: colors.text.secondary,
-            marginBottom: spacing[2],
-            paddingLeft: spacing[3],
-            lineHeight: typography.lineHeight.relaxed,
-        },
-        moreItems: {
-            fontSize: typography.fontSize.xs,
-            color: colors.text.muted,
-            fontStyle: 'italic',
-            marginTop: spacing[2],
-        },
-        emptyCell: {
-            fontSize: typography.fontSize.sm,
-            color: colors.text.muted,
-            fontStyle: 'italic',
-        },
-        skillsGrid: {
-            display: 'flex',
-            flexWrap: 'wrap' as const,
-            gap: spacing[2],
-        },
-        skillTag: {
-            padding: `${spacing[1]} ${spacing[3]}`,
-            borderRadius: radius.full,
-            fontSize: typography.fontSize.xs,
-            fontWeight: typography.fontWeight.medium,
-        },
-        savePanel: {
-            backgroundColor: colors.background.card,
-            borderRadius: radius['2xl'],
-            border: `1px solid ${colors.border.light}`,
-            boxShadow: shadows.sm,
-            padding: spacing[7],
-            position: 'sticky' as const,
-            top: spacing[8],
-        },
-        savePanelTitle: {
-            fontSize: typography.fontSize.lg,
-            fontWeight: typography.fontWeight.semibold,
-            color: colors.text.primary,
-            margin: `0 0 ${spacing[2]}`,
-        },
-        savePanelSubtitle: {
-            fontSize: typography.fontSize.sm,
-            color: colors.text.muted,
-            margin: `0 0 ${spacing[7]}`,
-        },
-        profileSelectorLabel: {
-            display: 'block',
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.medium,
-            color: colors.text.secondary,
-            marginBottom: spacing[3],
-        },
-        selectedProfileBadge: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[3],
-            padding: spacing[5],
-            backgroundColor: colors.primary[50],
-            border: `1px solid ${colors.primary[200]}`,
-            borderRadius: radius.lg,
-            marginBottom: spacing[5],
-        },
-        selectedProfileName: {
-            fontFamily: typography.fontFamily.mono,
-            fontSize: typography.fontSize.base,
-            fontWeight: typography.fontWeight.semibold,
-            color: colors.primary[700],
-        },
-        selectedProfileMeta: {
-            fontSize: typography.fontSize.xs,
-            color: colors.primary[600],
-        },
-        newProfileBadge: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[3],
-            padding: spacing[5],
-            backgroundColor: colors.success[50],
-            border: `1px solid ${colors.success[200]}`,
-            borderRadius: radius.lg,
-            marginBottom: spacing[5],
-        },
-        newProfileLabel: {
-            fontSize: typography.fontSize.xs,
-            fontWeight: typography.fontWeight.medium,
-            color: colors.success[600],
-            textTransform: 'uppercase' as const,
-        },
-        newProfileName: {
-            fontFamily: typography.fontFamily.mono,
-            fontSize: typography.fontSize.base,
-            fontWeight: typography.fontWeight.semibold,
-            color: colors.success[700],
-        },
-        errorBox: {
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: spacing[3],
-            padding: spacing[5],
-            backgroundColor: colors.error[50],
-            border: `1px solid ${colors.error[200]}`,
-            borderRadius: radius.lg,
-            marginBottom: spacing[5],
-        },
-        errorText: {
-            fontSize: typography.fontSize.sm,
-            color: colors.error[700],
-        },
-        saveButton: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: spacing[2],
-            width: '100%',
-            padding: `${spacing[5]} ${spacing[7]}`,
-            backgroundColor: colors.primary[600],
-            border: 'none',
-            borderRadius: radius.lg,
-            color: colors.text.inverse,
-            fontSize: typography.fontSize.base,
-            fontWeight: typography.fontWeight.semibold,
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-        },
-        saveButtonDisabled: {
-            backgroundColor: colors.gray[300],
-            cursor: 'not-allowed',
-        },
-        divider: {
-            borderTop: `1px solid ${colors.border.light}`,
-            margin: `${spacing[7]} 0`,
-        },
-        infoBox: {
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: spacing[3],
-            padding: spacing[5],
-            backgroundColor: colors.primary[50],
-            borderRadius: radius.lg,
-        },
-        infoText: {
-            fontSize: typography.fontSize.sm,
-            color: colors.primary[700],
-            lineHeight: typography.lineHeight.relaxed,
-        },
-    };
-
     return (
-        <div style={styles.container}>
+        <div className="max-w-[1600px] mx-auto p-8">
             {/* Header */}
-            <div style={styles.header}>
-                <div style={styles.headerLeft}>
-                    <button 
-                        onClick={onCancel}
-                        style={styles.backButton}
-                        onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = colors.gray[100];
-                        }}
-                        onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                        }}
-                    >
+            <div className="flex items-center justify-between mb-9 pb-7 border-b">
+                <div className="flex items-center gap-5">
+                    <Button variant="outline" onClick={onCancel} className="gap-2">
                         <ArrowLeft size={16} />
                         Back to Editor
-                    </button>
+                    </Button>
                     <div>
-                        <h1 style={styles.title}>Review Changes</h1>
-                        <p style={styles.subtitle}>
+                        <h1 className="text-3xl font-bold text-foreground m-0">Review Changes</h1>
+                        <p className="text-base text-muted-foreground mt-2">
                             Compare your changes before saving to a Resume Profile
                         </p>
                     </div>
@@ -678,63 +370,61 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
             </div>
 
             {/* Main Content */}
-            <div style={styles.mainContent}>
+            <div className="grid grid-cols-[1fr_360px] gap-9">
                 {/* Comparison Panel */}
                 <div>
                     {/* Experience Comparison */}
-                    <div style={{ ...styles.comparisonSection, marginBottom: spacing[7] }}>
-                        <div style={styles.sectionHeader}>
-                            <h2 style={styles.sectionTitle}>
-                                <FileText size={20} color={colors.primary[600]} />
+                    <Card className="mb-7 overflow-hidden">
+                        <div className="flex items-center justify-between p-7 border-b bg-muted/50">
+                            <h2 className="flex items-center gap-3 text-lg font-semibold text-foreground m-0">
+                                <FileText size={20} className="text-primary" />
                                 Work Experience
                             </h2>
                         </div>
-                        <div style={styles.columnHeaders}>
-                            <span style={styles.columnLabel}>Current Version</span>
+                        <div className="grid grid-cols-[1fr_40px_1fr] gap-4 px-7 py-4 bg-muted border-b">
+                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Current Version</span>
                             <span></span>
-                            <span style={styles.columnLabel}>Updated Version</span>
+                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Updated Version</span>
                         </div>
-                        <div style={styles.comparisonContent}>
+                        <div className="p-7">
                             {renderExperienceComparison(
                                 originalSnapshot.experience,
                                 updatedSnapshot.experience
                             )}
                         </div>
-                    </div>
+                    </Card>
 
                     {/* Skills Comparison */}
-                    <div style={styles.comparisonSection}>
-                        <div style={styles.sectionHeader}>
-                            <h2 style={styles.sectionTitle}>
-                                <FileText size={20} color={colors.primary[600]} />
+                    <Card className="overflow-hidden">
+                        <div className="flex items-center justify-between p-7 border-b bg-muted/50">
+                            <h2 className="flex items-center gap-3 text-lg font-semibold text-foreground m-0">
+                                <FileText size={20} className="text-primary" />
                                 Skills
                             </h2>
                         </div>
-                        <div style={styles.columnHeaders}>
-                            <span style={styles.columnLabel}>Current</span>
+                        <div className="grid grid-cols-[1fr_40px_1fr] gap-4 px-7 py-4 bg-muted border-b">
+                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Current</span>
                             <span></span>
-                            <span style={styles.columnLabel}>Updated</span>
+                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Updated</span>
                         </div>
-                        <div style={styles.comparisonContent}>
+                        <div className="p-7">
                             {renderSkillsComparison(
                                 originalSnapshot.skills,
                                 updatedSnapshot.skills
                             )}
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Save Panel */}
-                <div style={styles.savePanel}>
-                    <h3 style={styles.savePanelTitle}>Save to Profile</h3>
-                    <p style={styles.savePanelSubtitle}>
+                <Card className="p-7 sticky top-8 h-fit">
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Save to Profile</h3>
+                    <p className="text-sm text-muted-foreground mb-7">
                         Choose an existing profile to update or create a new one.
                     </p>
 
                     {/* Profile Selector */}
-                    <label style={styles.profileSelectorLabel}>
-                        Resume Profile Name
-                    </label>
+                    <Label className="mb-3">Resume Profile Name</Label>
                     <ProfileSelector
                         profiles={profiles}
                         selectedProfileId={selectedProfileId}
@@ -745,11 +435,11 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
 
                     {/* Selected Profile Display */}
                     {selectedProfile && !isCreatingNew && (
-                        <div style={{ ...styles.selectedProfileBadge, marginTop: spacing[5] }}>
-                            <CheckCircle size={18} color={colors.primary[600]} />
+                        <div className="flex items-center gap-3 p-5 bg-primary/10 border border-primary/20 rounded-lg mt-5">
+                            <CheckCircle size={18} className="text-primary" />
                             <div>
-                                <div style={styles.selectedProfileName}>{selectedProfile.name}</div>
-                                <div style={styles.selectedProfileMeta}>
+                                <div className="font-mono text-base font-semibold text-primary">{selectedProfile.name}</div>
+                                <div className="text-xs text-primary/80">
                                     Last updated: {new Date(selectedProfile.updatedAt).toLocaleDateString()}
                                 </div>
                             </div>
@@ -758,44 +448,32 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
 
                     {/* New Profile Display */}
                     {isCreatingNew && newProfileName && (
-                        <div style={{ ...styles.newProfileBadge, marginTop: spacing[5] }}>
+                        <div className="flex items-center gap-3 p-5 bg-green-50 border border-green-200 rounded-lg mt-5">
                             <div>
-                                <div style={styles.newProfileLabel}>New Profile</div>
-                                <div style={styles.newProfileName}>{newProfileName}</div>
+                                <div className="text-xs font-medium text-green-600 uppercase">New Profile</div>
+                                <div className="font-mono text-base font-semibold text-green-700">{newProfileName}</div>
                             </div>
                         </div>
                     )}
 
                     {/* Error Display */}
                     {error && (
-                        <div style={styles.errorBox}>
-                            <AlertTriangle size={18} color={colors.error[600]} />
-                            <span style={styles.errorText}>{error}</span>
+                        <div className="flex items-start gap-3 p-5 bg-destructive/10 border border-destructive/20 rounded-lg mb-5">
+                            <AlertTriangle size={18} className="text-destructive shrink-0" />
+                            <span className="text-sm text-destructive">{error}</span>
                         </div>
                     )}
 
                     {/* Save Button */}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={!canSave}
-                        style={{
-                            ...styles.saveButton,
-                            ...(!canSave ? styles.saveButtonDisabled : {}),
-                        }}
-                        onMouseEnter={(e) => {
-                            if (canSave) {
-                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = colors.primary[700];
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (canSave) {
-                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = colors.primary[600];
-                            }
-                        }}
+                        className="w-full mt-5"
+                        size="lg"
                     >
                         {isSaving ? (
                             <>
-                                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                                <Loader2 size={18} className="animate-spin" />
                                 Saving...
                             </>
                         ) : (
@@ -804,19 +482,19 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                                 {isCreatingNew ? 'Create Profile & Save' : 'Save Changes'}
                             </>
                         )}
-                    </button>
+                    </Button>
 
-                    <div style={styles.divider} />
+                    <div className="border-t my-7" />
 
                     {/* Info Box */}
-                    <div style={styles.infoBox}>
-                        <FileText size={16} color={colors.primary[600]} style={{ flexShrink: 0, marginTop: '2px' }} />
-                        <span style={styles.infoText}>
+                    <div className="flex items-start gap-3 p-5 bg-primary/10 rounded-lg">
+                        <FileText size={16} className="text-primary shrink-0 mt-0.5" />
+                        <span className="text-sm text-primary leading-relaxed">
                             Each Resume Profile stores a complete snapshot of your experience, education, and skills.
                             You can have up to {RESUME_PROFILE_MAX_COUNT} profiles.
                         </span>
                     </div>
-                </div>
+                </Card>
             </div>
         </div>
     );

@@ -4,7 +4,7 @@ import {
     BadgeCheck, Trophy, ChevronRight,
     MapPin, Mail, Phone, Globe, Save,
     UploadCloud, Loader2, CheckCircle, Sparkles,
-    Plus, Trash2, X, AlertCircle, RotateCcw, Bookmark, FileText
+    Plus, Trash2, X, AlertCircle, RotateCcw, Bookmark
 } from 'lucide-react';
 import {
     analyzeDescriptionPattern,
@@ -13,7 +13,7 @@ import {
 import type { ResumeProfile } from '../../types';
 import { RESUME_PROFILE_MAX_COUNT } from '../../types';
 import { ProfileSelector } from '../Resume/ProfileSelector';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -846,7 +846,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
             </Card>
 
             {/* Delete Confirmation Modal */}
-            <Dialog open={!!profileToDelete} onOpenChange={(open) => !open && setProfileToDelete(null)}>
+            <Dialog open={!!profileToDelete} onOpenChange={(open: boolean) => !open && setProfileToDelete(null)}>
                 <DialogContent className="max-w-[400px]">
                     <DialogHeader>
                         <div className="flex items-center gap-3">
@@ -1011,7 +1011,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                     <div className="grid grid-cols-2 gap-5">
                         <div className="flex flex-col gap-2">
                             <Label>Gender</Label>
-                            <Select value={user.gender} onValueChange={(value) => setUser(prev => ({ ...prev, gender: value }))}>
+                            <Select value={user.gender} onValueChange={(value: string) => setUser(prev => ({ ...prev, gender: value }))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select Gender" />
                                 </SelectTrigger>
@@ -1026,7 +1026,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
 
                         <div className="flex flex-col gap-2">
                             <Label>Veteran Status</Label>
-                            <Select value={user.veteranStatus} onValueChange={(value) => setUser(prev => ({ ...prev, veteranStatus: value }))}>
+                            <Select value={user.veteranStatus} onValueChange={(value: string) => setUser(prev => ({ ...prev, veteranStatus: value }))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select Status" />
                                 </SelectTrigger>
@@ -1040,7 +1040,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
 
                         <div className="flex flex-col gap-2">
                             <Label>Disability Status</Label>
-                            <Select value={user.disabilityStatus} onValueChange={(value) => setUser(prev => ({ ...prev, disabilityStatus: value }))}>
+                            <Select value={user.disabilityStatus} onValueChange={(value: string) => setUser(prev => ({ ...prev, disabilityStatus: value }))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select Status" />
                                 </SelectTrigger>
@@ -1062,7 +1062,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                     </h3>
                     <div className="flex flex-col gap-2 max-w-[400px]">
                         <Label>Race / Ethnicity</Label>
-                        <Select value={user.ethnicity} onValueChange={(value) => setUser(prev => ({ ...prev, ethnicity: value }))}>
+                        <Select value={user.ethnicity} onValueChange={(value: string) => setUser(prev => ({ ...prev, ethnicity: value }))}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Ethnicity" />
                             </SelectTrigger>

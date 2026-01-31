@@ -1,7 +1,24 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { ResumeProfile } from '../../types';
 import { RESUME_PROFILE_MAX_LENGTH, RESUME_PROFILE_MAX_COUNT, RESUME_PROFILE_NAME_REGEX } from '../../types';
-import { colors, typography, spacing, radius } from '../../styles/tokens';
+import { Check, ChevronsUpDown, Plus, AlertCircle, Bookmark } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+} from '@/components/ui/command';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface ProfileSelectorProps {
     profiles: ResumeProfile[];
@@ -85,8 +102,6 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
     const [inputValue, setInputValue] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
 
     // Get selected profile
     const selectedProfile = useMemo(() => 
@@ -117,42 +132,6 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
 
     // Can we add more profiles?
     const canAddMore = profiles.length < RESUME_PROFILE_MAX_COUNT;
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    // Update input when selection changes externally
-    useEffect(() => {
-        if (selectedProfile && !isOpen) {
-            setInputValue(selectedProfile.name);
-        }
-    }, [selectedProfile, isOpen]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const raw = e.target.value;
-        // Use normalizeForTyping to preserve trailing dash during typing
-        const normalized = normalizeForTyping(raw);
-        
-        // Show normalized value for user feedback
-        setInputValue(normalized);
-        setError(null);
-        
-        if (!isOpen) setIsOpen(true);
-    };
-
-    const handleInputFocus = () => {
-        setIsOpen(true);
-        // Select all text for easy replacement
-        inputRef.current?.select();
-    };
 
     const handleSelectProfile = (profile: ResumeProfile) => {
         setInputValue(profile.name);
@@ -205,269 +184,126 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
         }
     };
 
-    const styles = {
-        container: {
-            position: 'relative' as const,
-            width: '100%',
-        },
-        badgeContainer: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[3],
-            marginBottom: spacing[3],
-        },
-        badge: {
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: spacing[2],
-            padding: `${spacing[1]} ${spacing[4]}`,
-            backgroundColor: colors.primary[50],
-            border: `1px solid ${colors.primary[200]}`,
-            borderRadius: radius.full,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.medium,
-            color: colors.primary[700],
-        },
-        badgeIcon: {
-            width: '14px',
-            height: '14px',
-        },
-        inputWrapper: {
-            position: 'relative' as const,
-        },
-        input: {
-            width: '100%',
-            padding: `${spacing[4]} ${spacing[5]}`,
-            paddingRight: '36px',
-            fontSize: typography.fontSize.base,
-            fontFamily: typography.fontFamily.mono,
-            border: `1px solid ${error ? colors.error[300] : colors.border.default}`,
-            borderRadius: radius.lg,
-            backgroundColor: disabled ? colors.gray[100] : colors.background.card,
-            color: colors.text.primary,
-            outline: 'none',
-            transition: 'border-color 0.15s, box-shadow 0.15s',
-            boxSizing: 'border-box' as const,
-        },
-        inputFocused: {
-            borderColor: error ? colors.error[500] : colors.primary[500],
-            boxShadow: `0 0 0 3px ${error ? colors.error[100] : colors.primary[100]}`,
-        },
-        chevron: {
-            position: 'absolute' as const,
-            right: spacing[4],
-            top: '50%',
-            transform: 'translateY(-50%)',
-            pointerEvents: 'none' as const,
-            color: colors.text.muted,
-        },
-        dropdown: {
-            position: 'absolute' as const,
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: spacing[1],
-            backgroundColor: colors.background.card,
-            border: `1px solid ${colors.border.default}`,
-            borderRadius: radius.lg,
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-            zIndex: 50,
-            maxHeight: '280px',
-            overflowY: 'auto' as const,
-        },
-        option: {
-            padding: `${spacing[4]} ${spacing[5]}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: typography.fontSize.base,
-            color: colors.text.primary,
-            transition: 'background-color 0.1s',
-        },
-        optionHover: {
-            backgroundColor: colors.background.hover,
-        },
-        optionSelected: {
-            backgroundColor: colors.primary[50],
-        },
-        optionName: {
-            fontFamily: typography.fontFamily.mono,
-            fontWeight: typography.fontWeight.medium,
-        },
-        optionMeta: {
-            fontSize: typography.fontSize.xs,
-            color: colors.text.muted,
-        },
-        createOption: {
-            padding: `${spacing[4]} ${spacing[5]}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[3],
-            fontSize: typography.fontSize.base,
-            color: colors.primary[600],
-            fontWeight: typography.fontWeight.medium,
-            borderTop: `1px solid ${colors.border.light}`,
-            transition: 'background-color 0.1s',
-        },
-        createDisabled: {
-            color: colors.text.muted,
-            cursor: 'not-allowed',
-        },
-        error: {
-            marginTop: spacing[2],
-            fontSize: typography.fontSize.sm,
-            color: colors.error[600],
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-        },
-        hint: {
-            marginTop: spacing[2],
-            fontSize: typography.fontSize.xs,
-            color: colors.text.muted,
-        },
-        counter: {
-            fontSize: typography.fontSize.xs,
-            color: colors.text.muted,
-            marginLeft: 'auto',
-        },
-        emptyState: {
-            padding: `${spacing[6]} ${spacing[5]}`,
-            textAlign: 'center' as const,
-            color: colors.text.muted,
-            fontSize: typography.fontSize.sm,
-        },
-    };
-
-    const [isFocused, setIsFocused] = useState(false);
-
     return (
-        <div ref={containerRef} style={styles.container}>
+        <div className="w-full space-y-3">
             {/* Active Profile Badge */}
             {showBadge && selectedProfile && !isOpen && (
-                <div style={styles.badgeContainer}>
-                    <span style={styles.badge}>
-                        <svg style={styles.badgeIcon} viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1.581.814L10 14.229l-4.419 2.585A1 1 0 014 16V4z" clipRule="evenodd" />
-                        </svg>
+                <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="gap-2">
+                        <Bookmark className="h-3.5 w-3.5" />
                         {selectedProfile.name}
-                    </span>
-                    <span style={styles.counter}>
+                    </Badge>
+                    <span className="text-xs text-muted-foreground ml-auto">
                         {profiles.length}/{RESUME_PROFILE_MAX_COUNT} profiles
                     </span>
                 </div>
             )}
 
-            {/* Input */}
-            <div style={styles.inputWrapper}>
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={handleInputChange}
-                    onFocus={() => { handleInputFocus(); setIsFocused(true); }}
-                    onBlur={() => setIsFocused(false)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={placeholder}
-                    disabled={disabled}
-                    style={{
-                        ...styles.input,
-                        ...(isFocused ? styles.inputFocused : {}),
-                    }}
-                    aria-label="Resume Profile Name"
-                    aria-expanded={isOpen}
-                    aria-haspopup="listbox"
-                />
-                <span style={styles.chevron}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                </span>
-            </div>
+            {/* Combobox */}
+            <Popover open={isOpen} onOpenChange={setIsOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={isOpen}
+                        disabled={disabled}
+                        className={cn(
+                            "w-full justify-between font-mono",
+                            !selectedProfile && "text-muted-foreground"
+                        )}
+                    >
+                        {selectedProfile?.name || placeholder}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command shouldFilter={false}>
+                        <CommandInput
+                            placeholder="Type profile name..."
+                            value={inputValue}
+                            onValueChange={(value: string) => {
+                                const normalized = normalizeForTyping(value);
+                                setInputValue(normalized);
+                                setError(null);
+                            }}
+                            onKeyDown={handleKeyDown}
+                        />
+                        <CommandList>
+                            {filteredProfiles.length === 0 && !isNewProfile && inputValue && (
+                                <CommandEmpty>No profiles match "{inputValue}"</CommandEmpty>
+                            )}
+                            {filteredProfiles.length === 0 && !inputValue && (
+                                <CommandEmpty>No profiles yet. Type a name to create one.</CommandEmpty>
+                            )}
+                            
+                            {filteredProfiles.length > 0 && (
+                                <CommandGroup heading="Profiles">
+                                    {filteredProfiles.map((profile) => (
+                                        <CommandItem
+                                            key={profile.id}
+                                            value={profile.name}
+                                            onSelect={() => handleSelectProfile(profile)}
+                                            className="justify-between"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Check
+                                                    className={cn(
+                                                        "h-4 w-4",
+                                                        profile.id === selectedProfileId
+                                                            ? "opacity-100"
+                                                            : "opacity-0"
+                                                    )}
+                                                />
+                                                <span className="font-mono font-medium">{profile.name}</span>
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                                Updated {new Date(profile.updatedAt).toLocaleDateString()}
+                                            </span>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            )}
+
+                            {/* Create New Option */}
+                            {isNewProfile && (
+                                <>
+                                    <CommandSeparator />
+                                    <CommandGroup>
+                                        <CommandItem
+                                            onSelect={canAddMore ? handleCreateNew : undefined}
+                                            disabled={!canAddMore}
+                                            className={cn(
+                                                "gap-2",
+                                                canAddMore 
+                                                    ? "text-primary" 
+                                                    : "text-muted-foreground cursor-not-allowed"
+                                            )}
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                            {canAddMore ? (
+                                                <>
+                                                    Create new profile:{" "}
+                                                    <code className="font-mono bg-muted px-1 rounded">
+                                                        {normalizeProfileName(inputValue)}
+                                                    </code>
+                                                </>
+                                            ) : (
+                                                <>Maximum {RESUME_PROFILE_MAX_COUNT} profiles reached</>
+                                            )}
+                                        </CommandItem>
+                                    </CommandGroup>
+                                </>
+                            )}
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
 
             {/* Error Message */}
             {error && (
-                <div style={styles.error}>
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
+                <div className="flex items-center gap-2 text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4" />
                     {error}
-                </div>
-            )}
-
-
-
-            {/* Dropdown */}
-            {isOpen && (
-                <div style={styles.dropdown} role="listbox">
-                    {filteredProfiles.length > 0 ? (
-                        filteredProfiles.map(profile => (
-                            <div
-                                key={profile.id}
-                                onClick={() => handleSelectProfile(profile)}
-                                onMouseEnter={(e) => {
-                                    (e.currentTarget as HTMLDivElement).style.backgroundColor = colors.background.hover;
-                                }}
-                                onMouseLeave={(e) => {
-                                    (e.currentTarget as HTMLDivElement).style.backgroundColor = 
-                                        profile.id === selectedProfileId ? colors.primary[50] : 'transparent';
-                                }}
-                                style={{
-                                    ...styles.option,
-                                    ...(profile.id === selectedProfileId ? styles.optionSelected : {}),
-                                }}
-                                role="option"
-                                aria-selected={profile.id === selectedProfileId}
-                            >
-                                <span style={styles.optionName}>{profile.name}</span>
-                                <span style={styles.optionMeta}>
-                                    Updated {new Date(profile.updatedAt).toLocaleDateString()}
-                                </span>
-                            </div>
-                        ))
-                    ) : inputValue && !isNewProfile ? (
-                        <div style={styles.emptyState}>
-                            No profiles match "{inputValue}"
-                        </div>
-                    ) : null}
-
-                    {/* Create New Option */}
-                    {isNewProfile && (
-                        <div
-                            onClick={canAddMore ? handleCreateNew : undefined}
-                            onMouseEnter={(e) => {
-                                if (canAddMore) {
-                                    (e.currentTarget as HTMLDivElement).style.backgroundColor = colors.primary[50];
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent';
-                            }}
-                            style={{
-                                ...styles.createOption,
-                                ...(!canAddMore ? styles.createDisabled : {}),
-                            }}
-                            role="option"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                            </svg>
-                            {canAddMore ? (
-                                <>Create new profile: <code style={{ fontFamily: typography.fontFamily.mono }}>{normalizeProfileName(inputValue)}</code></>
-                            ) : (
-                                <>Maximum {RESUME_PROFILE_MAX_COUNT} profiles reached</>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Empty State */}
-                    {!inputValue && filteredProfiles.length === 0 && (
-                        <div style={styles.emptyState}>
-                            No profiles yet. Type a name to create one.
-                        </div>
-                    )}
                 </div>
             )}
         </div>
