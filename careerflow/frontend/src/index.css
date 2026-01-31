@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,12 +10,6 @@
  * This file defines global CSS variables that mirror the TypeScript design tokens.
  * Use these for CSS-based styling, animations, and third-party component theming.
  */
-
-/* =============================================================================
-   GOOGLE FONTS
-   ============================================================================= */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* =============================================================================
    SHADCN/UI CSS VARIABLES

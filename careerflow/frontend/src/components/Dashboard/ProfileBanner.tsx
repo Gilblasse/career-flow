@@ -1,113 +1,54 @@
-import React from 'react';
 import { MapPin, Calendar, Briefcase } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { UserAvatar } from '@/components/shared';
 
 const ProfileBanner: React.FC = () => {
     return (
-        <div style={{
-            backgroundColor: 'white',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            boxShadow: 'var(--shadow-card)',
-            position: 'relative',
-            minHeight: '220px',
-            display: 'flex',
-            flexDirection: 'column'
-        }}>
+        <Card className="border-0 shadow-sm overflow-hidden min-h-[220px] flex flex-col">
             {/* Top Graphic Banner */}
-            <div style={{
-                height: '140px',
-                backgroundColor: '#dcebf7', // Light blue base
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
+            <div className="h-36 bg-sky-100 relative overflow-hidden">
                 {/* Abstract blobs matching the design */}
-                <div style={{
-                    position: 'absolute',
-                    top: '-20px',
-                    left: '-20px',
-                    width: '150px',
-                    height: '150px',
-                    backgroundColor: '#cfe2f3',
-                    borderRadius: '50%',
-                    opacity: 0.6
-                }}></div>
-                <div style={{
-                    position: 'absolute',
-                    top: '20px',
-                    right: '10%',
-                    width: '200px',
-                    height: '200px',
-                    backgroundColor: '#e3f0fa',
-                    borderRadius: '50%',
-                    opacity: 0.8
-                }}></div>
-                <div style={{
-                    position: 'absolute',
-                    bottom: '-40px',
-                    right: '-20px',
-                    width: '180px',
-                    height: '180px',
-                    backgroundColor: '#bfd7ed',
-                    borderRadius: '50%',
-                    opacity: 0.5
-                }}></div>
+                <div className="absolute -top-5 -left-5 w-36 h-36 bg-sky-200/60 rounded-full" />
+                <div className="absolute top-5 right-[10%] w-48 h-48 bg-sky-50/80 rounded-full" />
+                <div className="absolute -bottom-10 -right-5 w-44 h-44 bg-sky-200/50 rounded-full" />
             </div>
 
             {/* Bottom Content Section */}
-            <div style={{
-                padding: '0 30px 25px 30px',
-                display: 'flex',
-                alignItems: 'flex-end',
-                marginTop: '-45px', // Pull content up to overlap
-                position: 'relative' // Ensure z-index works
-            }}>
-
+            <div className="px-8 pb-6 flex items-end -mt-12 relative">
                 {/* Profile Image - Overlapping */}
-                <div style={{
-                    width: '130px',
-                    height: '130px',
-                    borderRadius: '50%',
-                    backgroundColor: '#1E2142',
-                    border: '5px solid white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                    marginRight: '25px',
-                    zIndex: 10
-                }}>
-                    <img src="https://i.pravatar.cc/300?img=11" alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
+                <UserAvatar 
+                    src="https://i.pravatar.cc/300?img=11"
+                    name="Herman Johnson"
+                    size="lg"
+                    className="w-32 h-32 rounded-full border-4 border-background mr-6 z-10"
+                />
 
                 {/* User Info */}
-                <div style={{ flex: 1, paddingBottom: '10px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
-
+                <div className="flex-1 pb-2 flex items-end justify-between flex-wrap gap-5">
                     {/* Name & Role */}
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--color-text-dark)', marginBottom: '4px' }}>Herman Johnson</h1>
-                        <p style={{ color: 'var(--color-text-gray)', fontSize: '15px' }}>UI Designer</p>
+                        <h1 className="text-2xl font-bold text-foreground mb-1">Herman Johnson</h1>
+                        <p className="text-muted-foreground text-[15px]">UI Designer</p>
                     </div>
 
                     {/* Details - Right Aligned */}
-                    <div style={{ display: 'flex', gap: '25px', fontSize: '13px', color: '#52575C', marginBottom: '5px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Briefcase size={16} color="#8c91a3" />
+                    <div className="flex gap-6 text-sm text-muted-foreground mb-1">
+                        <div className="flex items-center gap-1.5">
+                            <Briefcase className="h-4 w-4" />
                             <span>Cityscaper</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <MapPin size={16} color="#8c91a3" />
+                        <div className="flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4" />
                             <span>Berlin, Germany</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Calendar size={16} color="#8c91a3" />
+                        <div className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4" />
                             <span>09 Sep 2023</span>
                         </div>
                     </div>
-
                 </div>
             </div>
-        </div>
+        </Card>
     );
 };
 

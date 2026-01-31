@@ -1,5 +1,9 @@
-import { User, Settings, LogOut } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import { User, Settings, LogOut, Bell, Search } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { UserAvatar, IconButton } from '@/components/shared';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
     onNavigate?: (view: string) => void;
@@ -30,141 +34,74 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     };
 
     return (
-        <header style={{
-            height: 'var(--header-height)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '30px',
-        }}>
+        <header className="h-16 flex items-center justify-between mb-8">
             {/* Search Bar */}
-            <div style={{
-                position: 'relative',
-                width: '400px',
-            }}>
-                <div style={{
-                    position: 'absolute',
-                    left: '20px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#B0B7C3'
-                }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </div>
-                <input
+            <div className="relative w-96">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
                     type="text"
                     placeholder="Search"
-                    style={{
-                        width: '100%',
-                        padding: '12px 20px 12px 50px',
-                        borderRadius: '15px',
-                        border: 'none',
-                        backgroundColor: 'white',
-                        color: 'var(--color-text-dark)',
-                        fontSize: 'var(--font-size-base)',
-                        outline: 'none',
-                        boxShadow: '0px 2px 5px rgba(0,0,0,0.02)'
-                    }}
+                    className="pl-11 h-11 rounded-2xl border-0 bg-card shadow-sm"
                 />
             </div>
 
             {/* Right Section: Notifications & Profile */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+            <div className="flex items-center gap-6">
                 {/* Notification Bell */}
-                <div style={{ position: 'relative', cursor: 'pointer', color: '#B0B7C3' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                    <span style={{
-                        position: 'absolute',
-                        top: '-2px',
-                        right: '-2px',
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: 'var(--color-danger)',
-                        borderRadius: '50%',
-                        border: '1px solid #fff'
-                    }}></span>
+                <div className="relative">
+                    <IconButton
+                        icon={<Bell className="h-5 w-5" />}
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-foreground"
+                        label="Notifications"
+                    />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border border-background" />
                 </div>
 
                 {/* Profile */}
                 <div
                     ref={menuRef}
-                    style={{ display: 'flex', alignItems: 'center', gap: '15px', position: 'relative', cursor: 'pointer' }}
+                    className="flex items-center gap-4 relative cursor-pointer"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: '600', fontSize: '14px' }}>H. Johnson</div>
-                        <div style={{ fontSize: '12px', color: 'var(--color-text-gray)' }}>Admin</div>
+                    <div className="text-right">
+                        <div className="font-semibold text-sm">H. Johnson</div>
+                        <div className="text-xs text-muted-foreground">Admin</div>
                     </div>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '12px',
-                        backgroundColor: '#e0e0e0',
-                        backgroundImage: 'url("https://i.pravatar.cc/150?img=11")', // Placeholder avatar
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        border: isMenuOpen ? '2px solid var(--color-primary)' : 'none'
-                    }}></div>
+                    <UserAvatar 
+                        src="https://i.pravatar.cc/150?img=11" 
+                        name="H. Johnson"
+                        className={cn(isMenuOpen && "ring-2 ring-primary")}
+                    />
 
                     {/* Dropdown Menu */}
                     {isMenuOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '120%',
-                            right: 0,
-                            width: '200px',
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                            border: '1px solid #F3F4F6',
-                            overflow: 'hidden',
-                            zIndex: 100,
-                            animation: 'scaleIn 0.2s ease-out'
-                        }}
+                        <div 
+                            className="absolute top-full right-0 mt-2 w-48 bg-card rounded-xl shadow-lg border border-border overflow-hidden z-50 animate-in fade-in-0 zoom-in-95"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div style={{ padding: '8px' }}>
-                                <button
+                            <div className="p-1.5">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-2.5 font-normal"
                                     onClick={() => handleNavigate('profile')}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                                        padding: '10px 12px', border: 'none', background: 'transparent',
-                                        borderRadius: '8px', cursor: 'pointer', color: '#374151',
-                                        fontSize: '14px', textAlign: 'left',
-                                        transition: 'background 0.2s'
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                 >
-                                    <User size={16} /> Profile
-                                </button>
-                                <button
+                                    <User className="h-4 w-4" /> Profile
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-2.5 font-normal"
                                     onClick={() => handleNavigate('settings')}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                                        padding: '10px 12px', border: 'none', background: 'transparent',
-                                        borderRadius: '8px', cursor: 'pointer', color: '#374151',
-                                        fontSize: '14px', textAlign: 'left',
-                                        transition: 'background 0.2s'
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                 >
-                                    <Settings size={16} /> Settings
-                                </button>
-                                <div style={{ height: '1px', backgroundColor: '#E5E7EB', margin: '4px 0' }}></div>
-                                <button style={{
-                                    display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                                    padding: '10px 12px', border: 'none', background: 'transparent',
-                                    borderRadius: '8px', cursor: 'pointer', color: '#EF4444',
-                                    fontSize: '14px', textAlign: 'left',
-                                    transition: 'background 0.2s'
-                                }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    <Settings className="h-4 w-4" /> Settings
+                                </Button>
+                                <div className="h-px bg-border my-1" />
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-2.5 font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
                                 >
-                                    <LogOut size={16} /> Logout
-                                </button>
+                                    <LogOut className="h-4 w-4" /> Logout
+                                </Button>
                             </div>
                         </div>
                     )}

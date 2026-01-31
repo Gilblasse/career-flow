@@ -1,118 +1,72 @@
 import { Home, FileUser, FileText, KanbanSquare, LifeBuoy, Settings, User } from 'lucide-react';
+import { NavButton } from '@/components/shared';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import type { ReactNode } from 'react';
 
 interface SidebarProps {
     currentView: string;
     onNavigate: (view: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
-    const menuItems = [
-        { name: 'Dashboard', icon: <Home size={20} />, id: 'dashboard' },
-        { name: 'Profile', icon: <User size={20} />, id: 'profile' },
-        { name: 'Resume', icon: <FileUser size={20} />, id: 'resume' },
-        { name: 'Cover letter', icon: <FileText size={20} />, id: 'cover-letter' },
-        { name: 'Application Process', icon: <KanbanSquare size={20} />, id: 'kanban' },
+interface MenuItem {
+    name: string;
+    icon: ReactNode;
+    id: string;
+}
 
-        { name: 'Help Center', icon: <LifeBuoy size={20} />, id: 'help' },
-        { name: 'Settings', icon: <Settings size={20} />, id: 'settings' },
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+    const menuItems: MenuItem[] = [
+        { name: 'Dashboard', icon: <Home className="h-5 w-5" />, id: 'dashboard' },
+        { name: 'Profile', icon: <User className="h-5 w-5" />, id: 'profile' },
+        { name: 'Resume', icon: <FileUser className="h-5 w-5" />, id: 'resume' },
+        { name: 'Cover letter', icon: <FileText className="h-5 w-5" />, id: 'cover-letter' },
+        { name: 'Application Process', icon: <KanbanSquare className="h-5 w-5" />, id: 'kanban' },
+        { name: 'Help Center', icon: <LifeBuoy className="h-5 w-5" />, id: 'help' },
+        { name: 'Settings', icon: <Settings className="h-5 w-5" />, id: 'settings' },
     ];
 
     return (
-        <aside style={{
-            width: 'var(--sidebar-width)',
-            backgroundColor: 'var(--color-bg-sidebar)',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '30px 20px',
-            position: 'sticky',
-            height: '100vh',
-            top: 0,
-            borderRight: '1px solid #f0f0f0', // Subtle border
-        }}>
+        <aside className="w-64 bg-background flex flex-col p-6 sticky h-screen top-0 border-r border-border">
             {/* Brand */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px', paddingLeft: '10px' }}>
-                <div style={{
-                    width: '32px',
-                    height: '32px',
-                    backgroundColor: 'var(--color-primary)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    fontSize: '20px'
-                }}>T</div>
-                <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-text-dark)' }}>Talt.AI</span>
+            <div className="flex items-center gap-2.5 mb-10 pl-2.5">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl">
+                    T
+                </div>
+                <span className="text-xl font-bold text-foreground">Talt.AI</span>
             </div>
 
             {/* Navigation */}
-            <nav style={{ flex: 1 }}>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {menuItems.map((item) => {
-                        const isActive = currentView === item.id;
-                        return (
-                            <li key={item.name}>
-                                <a href="#"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        onNavigate(item.id);
-                                    }}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '15px',
-                                        padding: '12px 20px',
-                                        borderRadius: '12px', // Slightly rounder
-                                        color: isActive ? 'var(--color-primary)' : '#52575C', // Specific gray
-                                        backgroundColor: isActive ? '#F2F6FF' : 'transparent', // Light blue bg
-                                        fontWeight: isActive ? '700' : '500', // Bolder active state
-                                        fontSize: '15px',
-                                        transition: 'all 0.2s ease',
-                                    }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        {item.icon}
-                                    </span>
-                                    {item.name}
-                                </a>
-                            </li>
-                        )
-                    })}
+            <nav className="flex-1">
+                <ul className="flex flex-col gap-1">
+                    {menuItems.map((item) => (
+                        <li key={item.id}>
+                            <NavButton
+                                icon={item.icon}
+                                label={item.name}
+                                isActive={currentView === item.id}
+                                onClick={() => onNavigate(item.id)}
+                            />
+                        </li>
+                    ))}
                 </ul>
             </nav>
 
             {/* Upgrade Box */}
-            <div style={{
-                marginTop: 'auto',
-                backgroundColor: '#F5F5F9',
-                padding: '20px',
-                borderRadius: '20px',
-                textAlign: 'center',
-                position: 'relative'
-            }}>
-                {/* Rocket Icon Placeholder */}
-                <div style={{ marginBottom: '10px', fontSize: '30px' }}>🚀</div>
+            <Card className="mt-auto bg-muted/50 border-0">
+                <CardContent className="p-5 text-center">
+                    {/* Rocket Icon */}
+                    <div className="mb-2.5 text-3xl">🚀</div>
 
-                <p style={{ color: 'var(--color-text-gray)', fontSize: '13px', marginBottom: '15px' }}>
-                    Upgrade to <strong style={{ color: 'var(--color-text-dark)' }}>PRO</strong> for<br /> more services
-                </p>
+                    <p className="text-muted-foreground text-sm mb-4">
+                        Upgrade to <strong className="text-foreground">PRO</strong> for<br /> more services
+                    </p>
 
-                <button style={{
-                    backgroundColor: 'var(--color-primary)',
-                    color: 'white',
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '10px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 10px rgba(68, 107, 242, 0.2)'
-                }}>
-                    <span>✨</span> Upgrade
-                </button>
-            </div>
+                    <Button className="w-full shadow-md">
+                        <span>✨</span> Upgrade
+                    </Button>
+                </CardContent>
+            </Card>
         </aside>
     );
 };
