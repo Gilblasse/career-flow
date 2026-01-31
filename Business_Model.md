@@ -27,6 +27,15 @@ It collects a user's profile, searches for jobs, generates tailored application 
 
 The system is designed to be deterministic, auditable, and human-in-the-loop by default.
 
+Platform:
+- Web application only (no native mobile app)
+- Responsive design for mobile browser access
+
+Language support:
+- English (primary)
+- Multi-language support planned: Spanish, French, German, Portuguese, Japanese, Mandarin Chinese
+- UI localization and job matching in supported languages
+
 ---
 
 ## 2. Target Customer
@@ -48,44 +57,132 @@ The system is designed to be deterministic, auditable, and human-in-the-loop by 
 
 ## 4. User Journey (Current System)
 
+### 4.0 Authentication
+- Authentication method: OAuth (Google, LinkedIn, or other supported providers)
+- Email verification required before account activation
+- Session management: Standard secure session handling
+- Multi-device sessions: Supported (users may be logged in on multiple devices simultaneously)
+- No password-based authentication; purely OAuth-based (no password reset flow)
+- Session timeout: 24 hours of inactivity; maximum session duration 7 days
+- Age verification: Honor-system (users must be 18+ per Terms of Service)
+
+---
+
 ### 4.1 Entry
 - Initial trigger: User-initiated action
 - Command format:
   - `name: Full Name, search: Role1, Role2`
 - Resume upload:
-  - Word documents only (.doc, .docx)
+  - Supported formats: PDF (.pdf), Word (.doc, .docx)
 
 ---
 
 ### 4.2 Profile Capture (Canonical Store)
-Storage: User Profile data store
+Storage: User Profile database
+
+The profile contains two categories of data:
+
+#### Admin Data (Immutable)
+Captured at sign-in and stored in Settings. These are the only immutable fields:
+- Full legal name (first name, last name)
+- Email address
+
+Admin data represents the **account owner** and is used for account notifications. It may not be modified after sign-in.
+
+#### Profile Data (Mutable)
+All other fields are user-editable on the Profile page.
+
+**Note:** Profile data represents the **job applicant**, which may be a different individual than the account owner (e.g., a career coach managing applications for a client). Each account supports one applicant only, with multiple resume variants via Resume Profiles.
 
 Required fields:
-- base_resume
+- base_resume (user's uploaded resume file)
 - target_roles
 - remote_preference
 - linkedin_url
 
 Optional fields:
-- email
-- phone
+- phone (format: `(XXX) XXX-XXXX`)
 - location
 - skills
 - salary range
 - work authorization / sponsorship
 - portfolio or GitHub
+- projects
+- certifications
+- accomplishments
+- education history
 
-#### Immutable Fields
-The following fields are immutable once set and may not be fixed, optimized, inferred, or rewritten by AI:
-- Full legal name
-- Email address
-- Phone number
-- Work authorization status
-- Sponsorship requirement
-- Country / state of residence
-- Education history
+#### Data Relationship
+- `base_resume`: The original uploaded resume file, stored for reference
+- `resumeSnapshot`: The editable version within each Resume Profile, derived from base_resume but independently modifiable
 
-AI may not silently overwrite or modify these fields under any circumstance.
+---
+
+### 4.2.1 Resume Profiles
+Storage: Resume Profiles within User Profile
+
+Resume Profiles allow users to maintain multiple named resume variants for different job types or industries.
+
+Profile naming rules:
+- Lowercase letters only, separated by dashes (e.g., `software-engineering`, `data-science`)
+- Maximum 34 characters per profile name
+- Maximum 5 profiles per user
+- Profile names must be unique
+- Validated against `RESUME_PROFILE_NAME_REGEX`: `/^[a-z]+(-[a-z]+)*$/`
+
+Profile limit enforcement:
+- When a user reaches 5 profiles, creation is blocked
+- User is prompted to delete an existing profile before creating a new one
+
+Profile behavior:
+- Each profile stores a `resumeSnapshot` containing experience, education, and skills
+- Spaces typed in profile name automatically convert to dashes
+- First save auto-creates a "default" profile if none exist
+- Profile selection is required if any profiles exist
+- Changes saved on Profile page sync to the active resume profile's snapshot
+- `lastEditedProfileId` tracks which profile was most recently edited
+
+Profile data isolation:
+- Each profile's snapshot is independent
+- Switching profiles loads that profile's snapshot data
+- Main profile data (contact, preferences) is shared across all resume profiles
+
+---
+
+### 4.2.2 Self-Identification Data
+Optional EEO/voluntary disclosure fields:
+- Gender
+- Veteran status
+- Disability status
+- Race/ethnicity
+
+These fields are:
+- User-provided only, never AI-inferred
+- Used for ATS form completion when required (mapped from Profile page data)
+- Optional and may be left blank
+
+---
+
+### 4.2.3 Settings Page
+The Settings page displays Admin Data (read-only) and provides account management options:
+
+**Notifications:**
+- Email notifications for application submissions
+- Email notifications for interview requests
+- Email notifications for status changes
+- Interview overlap detection: Alerts user if scheduled interviews conflict
+
+Notification preferences:
+- Users may opt in/out of each notification type individually
+- All notifications enabled by default
+
+**Calendar Integration:**
+- Connects to user's external calendar (Google Calendar, Outlook)
+- Reads interview events from connected calendar
+- When user moves a job to "Interview" on the Kanban board, system creates calendar event in both app and user's external calendar (if not already set)
+
+**Account Management:**
+- Account deletion (permanently removes account and all associated data; no data export option)
 
 ---
 
@@ -100,6 +197,11 @@ Filters:
 - Remote preference
 - Salary range (when available)
 
+Company blocklist:
+- Users may block specific companies
+- Blocked companies are excluded from all job discovery and matching
+- Maximum 100 companies per user
+
 Allowed ATS platforms:
 - Greenhouse
 - Lever
@@ -107,15 +209,25 @@ Allowed ATS platforms:
 
 All other ATS platforms are excluded unless explicitly added.
 
+Job expiration:
+- System periodically checks if job postings are still active
+- Expired or removed job postings are detected and marked as expired
+- Expired jobs are removed from active queues and not processed
+
 ---
 
 ### 4.4 Job Intake and De-duplication
-Storage: Job Applications data store
+Storage: Job Applications database
 
 Rules:
 - Primary duplicate identifier: ATS job ID (if available)
 - Fallback duplicate identifier: Exact job_url match
 - Duplicate jobs are never processed twice per user
+
+Re-apply policy:
+- Users may not re-apply to a job they have already applied to
+- Jobs rejected by the system (eligibility mismatch) may be manually overridden and resubmitted
+- Jobs rejected by the employer are final and cannot be re-applied through the system
 
 Stored fields:
 - application_id
@@ -124,7 +236,33 @@ Stored fields:
 - job_url
 - ats_type
 - source
-- status lifecycle
+- status lifecycle: `new` → `queued` → `pending_review` → `approved` / `rejected` / `withdrawn` → `submitted`
+
+Withdrawal:
+- Users may withdraw an application after approval but before submission
+- Withdrawn applications are not submitted and are retained for audit
+
+---
+
+### 4.4.1 Application Board (Kanban)
+The Application Board provides a visual pipeline for tracking job applications.
+
+Columns:
+- **Applied** - Applications that have been submitted
+- **Screening** - Applications under initial review by employer
+- **Interview** - Applications that have progressed to interview stage
+- **Offer** - Applications that have resulted in a job offer
+
+Board behavior:
+- Users can drag applications between columns to update status
+- Moving to "Interview" triggers calendar event creation (if calendar integration enabled)
+- Rejected applications are filtered out of the main board view but accessible via filter
+- Each card displays: company, role, date, and quick actions
+
+View modes:
+- Board view (Kanban columns)
+- Table view (list format)
+- Calendar view (interview timeline)
 
 ---
 
@@ -167,7 +305,7 @@ Generated outputs:
 - Generated answers JSON for common ATS questions
 
 Global writing rules:
-- No hyphens allowed
+- No hyphens allowed in prose content (resumes, cover letters). Hyphens are permitted in identifiers and profile names.
 - No generic AI phrases
 - Conversational, human tone
 
@@ -175,7 +313,15 @@ AI behavior rules:
 - AI may reorder and rephrase existing resume content
 - AI may infer metrics conservatively **only when the role strongly implies them**
 - AI may not fabricate experience, credentials, employers, or education
-- Immutable profile fields may never be modified or reworded
+- Admin data (name, email) may never be modified or reworded
+
+Resume Context Flow:
+- User edits resume in Resume Builder
+- User navigates to Resume Context page with snapshot of changes
+- User selects existing profile or creates new profile to save to
+- AI generation uses the active application profile by default; user may switch profiles before generation
+- User reviews diff before confirming save
+- Save updates both main profile and resume profile snapshot
 
 ---
 
@@ -217,7 +363,7 @@ Reject:
 - Application is never submitted
 
 If no user response is received:
-- Application is automatically rejected after a defined timeout window
+- Application is automatically rejected after 48 hours
 
 ---
 
@@ -236,6 +382,8 @@ High-severity errors:
 - Require manual review
 
 A global kill switch exists to halt all automation immediately.
+- Kill switch is admin-controlled only
+- Users may pause their own queue but cannot trigger global halt
 
 ---
 
@@ -243,8 +391,22 @@ A global kill switch exists to halt all automation immediately.
 
 ### 5.1 Automation Authority
 - Auto-submit is disabled by default
+- Queue processing defaults to `dryRun=true` for safe testing
 - Auto-submit is permitted only for premium users
-- First-time companies and first-time ATS types always require approval
+- First-time companies and first-time ATS types always require approval (per-user basis)
+
+**Pro Features (Pro tier and above):**
+- Priority queue processing
+- Advanced job matching algorithms
+- Analytics and reporting dashboard
+- Extended application history
+
+**Premium Features (Premium tier only):**
+- All Pro features
+- Auto-submit capability
+- Bulk application management
+- Resume A/B testing
+- Dedicated support
 
 ---
 
@@ -273,13 +435,17 @@ Before submission, the system must retain:
 - Generated application content
 
 Retention policy:
-- Retention window to be defined (30 / 90 / indefinite)
+- Retention window: Indefinite
 
 ---
 
 ### 5.5 Compliance Mode
 
 The system supports a Compliance Mode designed for high-risk, enterprise, or legally sensitive use cases.
+
+Activation:
+- Compliance Mode is enabled via admin setting only
+- Users cannot toggle Compliance Mode themselves
 
 When Compliance Mode is enabled:
 - AI inference is disabled entirely
@@ -340,17 +506,83 @@ Agentic Auto Apply may be disabled automatically if risk or compliance threshold
 
 ---
 
+### 5.7 Developer and Debug Tools
+Available in development mode only:
+- Chrome DevTools MCP integration for DOM inspection and debugging
+- Profile reset functionality (clears all data)
+- Verification scripts (`verify-*.ts`) for targeted system checks
+- SQLite database at `careerflow.db` for local persistence
+- Firecrawl integration for web scraping job listings
+
+Dev mode is controlled by `VITE_DEV_MODE` environment variable.
+
+Job discovery currently uses RemoteOK and Arbeitnow APIs. Firecrawl integration is planned for future expansion.
+
+Environment variables:
+- `OPENAI_API_KEY` - Required for AI content generation
+- `FIRECRAWL_API_KEY` - Reserved for future job scraping expansion
+- `LOG_LEVEL` - Controls logging verbosity
+
+---
+
+### 5.8 API Rate Limiting
+Rate limits protect against abuse and ensure fair usage.
+
+Per-user limits:
+- API requests: 100 requests per minute
+- Resume generation: 20 per hour
+- Job scraping: 50 jobs per minute
+
+Per-tier limits:
+- Free: 500 API calls per day
+- Pro: 2,000 API calls per day
+- Premium: 10,000 API calls per day
+
+Exceeding limits:
+- Requests are rejected with 429 status code
+- Retry-After header indicates wait time
+- Repeated abuse may result in temporary suspension
+
+---
+
 ## 6. Revenue Model
 Type:
-- Personal tool / SaaS / hybrid (to be defined)
+- SaaS subscription model
 
-Pricing:
-- Plan A:
-- Plan B:
+Payment processor:
+- Stripe
+
+Currency:
+- USD only
+
+Pricing tiers:
+- Free: $0/month (limited features)
+- Pro: $20/month (expanded limits, priority queue)
+- Premium: $50/month (full features including auto-submit)
+
+Billing cycle:
+- Monthly billing available
+- Annual billing available (2 months free, ~17% discount)
+
+Refund policy:
+- No pro-rated refunds for mid-cycle cancellations
+- Access continues until the end of the paid billing period
+
+Upgrade/downgrade policy:
+- Upgrades take effect immediately with pro-rated billing
+- Downgrades take effect at the end of the current billing period
+- Users retain access to current tier features until period ends
 
 Usage limits:
-- Daily cap:
-- Monthly cap:
+- Free tier:
+  - Daily cap: 10 applications
+  - Monthly cap: 100 applications
+- Pro tier:
+  - Daily cap: 25 applications
+  - Monthly cap: 250 applications
+- Premium tier:
+  - Daily cap: 50 applications
+  - Monthly cap: 500 applications
 
 Cost drivers:
 - AI token usage
@@ -404,7 +636,7 @@ Next:
 - Negative and must-have filters
 - Dynamic ATS mapping updates
 - Multi-user scaling
-- Admin dashboard
+- System admin dashboard (for managing users, monitoring system health)
 - Compliance and EEO handling modes
 
 ---
