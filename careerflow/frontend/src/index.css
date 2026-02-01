@@ -318,6 +318,7 @@
        Layout
        ------------------------------------------------------------------------- */
     --sidebar-width: 255px;
+    --sidebar-collapsed-width: 72px;
     --header-height: 70px;
     --max-content-width: 1400px;
     --card-padding: 24px;

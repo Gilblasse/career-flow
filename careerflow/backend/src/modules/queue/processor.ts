@@ -8,34 +8,69 @@ import ProfileService from '../../services/profile.js';
 import Logger from '../../services/logger.js';
 import AuditService from '../../services/audit.js';
 
+export type PauseReason = 'captcha' | 'user_takeover' | 'manual' | null;
+
+export interface QueueStatus {
+    isProcessing: boolean;
+    isPaused: boolean;
+    pauseReason: PauseReason;
+    currentJobId: number | null;
+    queuedJobIds: number[];
+    completedJobIds: number[];
+    failedJobIds: number[];
+    totalCount: number;
+}
+
 class QueueProcessor {
     private isProcessing = false;
     private shouldStop = false;
     private isPaused = false;
-    private retryMap: Map<number, number> = new Map(); // jobId -> attemptCount
+    private pauseReason: PauseReason = null;
+    private currentJobId: number | null = null;
+    private queuedJobIds: number[] = [];
+    private completedJobIds: number[] = [];
+    private failedJobIds: number[] = [];
+    private retryMap: Map<number, number> = new Map();
 
     public stop() {
         if (this.isProcessing) {
             this.shouldStop = true;
+            this.pauseReason = 'manual';
             Logger.info('Queue stop signal received. Finishing current job...');
         }
     }
 
-    public pause() {
+    public pause(reason: PauseReason = 'manual') {
         this.isPaused = true;
-        Logger.warn('Queue PAUSED due to critical error (e.g. CAPTCHA).');
+        this.pauseReason = reason;
+        Logger.warn(`Queue PAUSED. Reason: ${reason}`);
     }
 
     public resume() {
         this.isPaused = false;
+        this.pauseReason = null;
         Logger.info('Queue resumed.');
     }
 
-    public getStatus() {
+    public getStatus(): QueueStatus {
         return {
             isProcessing: this.isProcessing,
-            isPaused: this.isPaused
+            isPaused: this.isPaused,
+            pauseReason: this.pauseReason,
+            currentJobId: this.currentJobId,
+            queuedJobIds: [...this.queuedJobIds],
+            completedJobIds: [...this.completedJobIds],
+            failedJobIds: [...this.failedJobIds],
+            totalCount: this.queuedJobIds.length + this.completedJobIds.length + this.failedJobIds.length + (this.currentJobId ? 1 : 0),
         };
+    }
+
+    private resetCampaignState() {
+        this.currentJobId = null;
+        this.queuedJobIds = [];
+        this.completedJobIds = [];
+        this.failedJobIds = [];
+        this.pauseReason = null;
     }
 
     /**
@@ -56,6 +91,7 @@ class QueueProcessor {
 
         this.isProcessing = true;
         this.shouldStop = false;
+        this.resetCampaignState();
         Logger.info(`Starting queue processing. Limit: ${limit}, DryRun: ${dryRun}`);
 
         try {
@@ -66,6 +102,9 @@ class QueueProcessor {
                 return;
             }
 
+            // Initialize queue state
+            this.queuedJobIds = pendingJobs.map(j => j.id);
+
             const profile = ProfileService.getConfig();
 
             for (const job of pendingJobs) {
@@ -74,7 +113,15 @@ class QueueProcessor {
                     break;
                 }
 
+                // Move job from queued to current
+                this.queuedJobIds = this.queuedJobIds.filter(id => id !== job.id);
+                this.currentJobId = job.id;
+
                 await this.processJob(job, profile, dryRun);
+
+                // Move job from current to completed/failed (handled in processJob)
+                this.currentJobId = null;
+
                 // Safety delay
                 if (limit > 1) {
                     await new Promise(r => setTimeout(r, 5000));
@@ -85,6 +132,7 @@ class QueueProcessor {
             Logger.error('Queue processing failed', error);
         } finally {
             this.isProcessing = false;
+            this.currentJobId = null;
             Logger.info('Queue processing finished.');
         }
     }
@@ -106,15 +154,13 @@ class QueueProcessor {
             await ApplicationRunner.submitApplication(job, resumePath, dryRun);
 
             // 3. Update Status
-            // If dryRun, we might not want to mark as APPLIED essentially, 
-            // but for tracking flow we can mark as PROCESSED or leave as PENDING?
-            // Let's mark as 'applied' if not dry run, or maybe separate status.
-            // For now, if Dry Run succeeds, we leave it PENDING or update to a new status 'REVIEWED'?
-            // Let's assume we update to 'applied' if not dry run.
-
             if (!dryRun) {
                 JobStore.updateStatus(job.id, 'applied');
             }
+            
+            // Mark as completed
+            this.completedJobIds.push(job.id);
+            
             // Clear retry count on success
             this.retryMap.delete(job.id);
 
@@ -122,30 +168,33 @@ class QueueProcessor {
             Logger.error(`Failed to process Job #${job.id}`, error);
 
             if (error.name === 'CaptchaDetectedError') {
-                this.pause();
+                this.pause('captcha');
                 AuditService.log({
                     actionType: 'ERROR',
                     jobId: job.id,
                     details: { error: 'CAPTCHA Detected - Queue Paused' }
                 });
-                return; // Stop processing this job, queue is paused for next loop check
+                return;
             }
 
-            // Should also catch TransientError here if we implement it in runner...
-            // For now assuming all other errors are failed attempts.
+            if (error.name === 'UserTakeoverError') {
+                this.pause('user_takeover');
+                AuditService.log({
+                    actionType: 'ERROR',
+                    jobId: job.id,
+                    details: { error: 'User takeover detected - Queue Paused' }
+                });
+                return;
+            }
 
             // Simple Retry Logic (1 retry)
             const attempts = this.retryMap.get(job.id) || 0;
             if (attempts < 1) {
                 Logger.info(`Retrying Job #${job.id} (Attempt ${attempts + 1})`);
                 this.retryMap.set(job.id, attempts + 1);
-                // We don't mark as failed yet, it will be picked up next run (still pending)
-                // But wait, if we processPending, we pick it up again.
-                // We should probably just return and let the queue loop pick it up next time?
-                // Or recursively call processJob? No, dangerous recursion.
-                // Just keeping it 'pending' allows next queue run to pick it up.
             } else {
                 JobStore.updateStatus(job.id, 'failed');
+                this.failedJobIds.push(job.id);
                 AuditService.log({
                     actionType: 'ERROR',
                     jobId: job.id,

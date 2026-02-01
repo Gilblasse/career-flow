@@ -92,7 +92,7 @@ Admin data represents the **account owner** and is used for account notification
 #### Profile Data (Mutable)
 All other fields are user-editable on the Profile page.
 
-**Note:** Profile data represents the **job applicant**, which may be a different individual than the account owner (e.g., a career coach managing applications for a client). Each account supports one applicant only, with multiple resume variants via Resume Profiles.
+**Note:** Profile data represents the **job applicant**, which may be a different individual than the account owner (e.g., a career coach managing applications for a client). Each account supports one applicant only, with multiple resume variants via Resume Variants.
 
 Required fields:
 - base_resume (user's uploaded resume file)
@@ -118,34 +118,34 @@ Optional fields:
 
 ---
 
-### 4.2.1 Resume Profiles
-Storage: Resume Profiles within User Profile
+### 4.2.1 Resume Variants
+Storage: Resume Variants within User Profile
 
-Resume Profiles allow users to maintain multiple named resume variants for different job types or industries.
+Resume Variants allow users to maintain multiple named resume variations for different job types or industries.
 
-Profile naming rules:
+Variant naming rules:
 - Lowercase letters only, separated by dashes (e.g., `software-engineering`, `data-science`)
-- Maximum 34 characters per profile name
-- Maximum 5 profiles per user
-- Profile names must be unique
-- Validated against `RESUME_PROFILE_NAME_REGEX`: `/^[a-z]+(-[a-z]+)*$/`
+- Maximum 34 characters per variant name
+- Maximum 3 variants per user
+- Variant names must be unique
+- Validated against `RESUME_VARIANT_NAME_REGEX`: `/^[a-z]+(-[a-z]+)*$/`
 
-Profile limit enforcement:
-- When a user reaches 5 profiles, creation is blocked
-- User is prompted to delete an existing profile before creating a new one
+Variant limit enforcement:
+- When a user reaches 3 variants, creation is blocked
+- User is prompted to delete an existing variant before creating a new one
 
-Profile behavior:
-- Each profile stores a `resumeSnapshot` containing experience, education, and skills
-- Spaces typed in profile name automatically convert to dashes
-- First save auto-creates a "default" profile if none exist
-- Profile selection is required if any profiles exist
-- Changes saved on Profile page sync to the active resume profile's snapshot
-- `lastEditedProfileId` tracks which profile was most recently edited
+Variant behavior:
+- Each variant stores a `resumeSnapshot` containing experience, education, and skills
+- Spaces typed in variant name automatically convert to dashes
+- First save auto-creates a "default" variant if none exist
+- Variant selection via Resume Variants section on Profile page
+- Changes saved on Profile page sync to the active resume variant's snapshot
+- `lastEditedVariantId` tracks which variant was most recently edited
 
-Profile data isolation:
-- Each profile's snapshot is independent
-- Switching profiles loads that profile's snapshot data
-- Main profile data (contact, preferences) is shared across all resume profiles
+Variant data isolation:
+- Each variant's snapshot is independent
+- Switching variants loads that variant's snapshot data
+- Main profile data (contact, preferences) is shared across all resume variants
 
 ---
 

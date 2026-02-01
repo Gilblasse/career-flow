@@ -1,7 +1,12 @@
-// Resume Profile validation constants
-export const RESUME_PROFILE_MAX_LENGTH = 34;
-export const RESUME_PROFILE_MAX_COUNT = 5;
-export const RESUME_PROFILE_NAME_REGEX = /^[a-z]+(-[a-z]+)*$/;
+// Resume Variant validation constants (renamed from "Profile" to "Variant")
+export const RESUME_VARIANT_MAX_LENGTH = 34;
+export const RESUME_VARIANT_MAX_COUNT = 3;
+export const RESUME_VARIANT_NAME_REGEX = /^[a-z]+(-[a-z]+)*$/;
+
+// Backward compatibility aliases
+export const RESUME_PROFILE_MAX_LENGTH = RESUME_VARIANT_MAX_LENGTH;
+export const RESUME_PROFILE_MAX_COUNT = RESUME_VARIANT_MAX_COUNT;
+export const RESUME_PROFILE_NAME_REGEX = RESUME_VARIANT_NAME_REGEX;
 
 export interface ResumeProfile {
     id: string;

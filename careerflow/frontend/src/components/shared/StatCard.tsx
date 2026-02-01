@@ -9,6 +9,8 @@ interface StatCardProps {
   change?: string;
   iconClassName?: string;
   className?: string;
+  onClick?: () => void;
+  isSelected?: boolean;
 }
 
 export function StatCard({ 
@@ -17,10 +19,20 @@ export function StatCard({
   value, 
   change,
   iconClassName = 'bg-primary/10 text-primary',
-  className 
+  className,
+  onClick,
+  isSelected = false,
 }: StatCardProps) {
   return (
-    <Card className={cn("border-0 shadow-sm", className)}>
+    <Card 
+      className={cn(
+        "border-0 shadow-sm transition-all",
+        onClick && "cursor-pointer hover:shadow-md hover:scale-[1.02]",
+        isSelected && "ring-2 ring-primary ring-offset-2",
+        className
+      )}
+      onClick={onClick}
+    >
       <CardContent className="flex flex-col p-5">
         <div className="flex items-center gap-3 mb-5">
           <div className={cn(

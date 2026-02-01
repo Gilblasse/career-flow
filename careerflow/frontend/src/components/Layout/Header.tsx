@@ -34,19 +34,19 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     };
 
     return (
-        <header className="h-16 flex items-center justify-between mb-8">
-            {/* Search Bar */}
-            <div className="relative w-96">
+        <header className="h-14 lg:h-16 flex items-center justify-between">
+            {/* Search Bar - hidden on small mobile, visible from sm up */}
+            <div className="relative hidden sm:block flex-1 max-w-[280px] md:max-w-96">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                     type="text"
                     placeholder="Search"
-                    className="pl-11 h-11 rounded-2xl border-0 bg-card shadow-sm"
+                    className="pl-11 h-10 lg:h-11 rounded-2xl border-0 bg-card shadow-sm"
                 />
             </div>
 
             {/* Right Section: Notifications & Profile */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 md:gap-6 ml-auto">
                 {/* Notification Bell */}
                 <div className="relative">
                     <IconButton
@@ -61,10 +61,10 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 {/* Profile */}
                 <div
                     ref={menuRef}
-                    className="flex items-center gap-4 relative cursor-pointer"
+                    className="flex items-center gap-2 md:gap-4 relative cursor-pointer"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
-                    <div className="text-right">
+                    <div className="text-right hidden sm:block">
                         <div className="font-semibold text-sm">H. Johnson</div>
                         <div className="text-xs text-muted-foreground">Admin</div>
                     </div>

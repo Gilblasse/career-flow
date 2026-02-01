@@ -5,6 +5,12 @@ import { IFilterRule, TechStackRule, RemoteRule, SeniorityRule, FilterResult } f
 
 import ProfileService from '../../services/profile.js';
 
+interface RuleResult {
+    ruleName: string;
+    passed: boolean;
+    reason: string;
+}
+
 class FilterEngine {
     private rules: IFilterRule[] = [];
 
@@ -19,28 +25,35 @@ class FilterEngine {
     public analyze(job: Job): FilterResult {
         Logger.info(`Analyzing Job #${job.id}: ${job.company} - ${job.title}`);
 
+        const ruleBreakdown: RuleResult[] = [];
+        let finalResult: FilterResult = { status: 'ACCEPTED', reason: 'Passed all hard gates' };
+
         for (const rule of this.rules) {
             const result = rule.evaluate(job);
+            ruleBreakdown.push({
+                ruleName: rule.name,
+                passed: result.status !== 'REJECTED',
+                reason: result.reason,
+            });
 
-            if (result.status === 'REJECTED') {
-                this.audit(job, result, rule.name);
-                return result; // Fast fail
+            if (result.status === 'REJECTED' && finalResult.status !== 'REJECTED') {
+                finalResult = result;
             }
         }
 
-        const successResult: FilterResult = { status: 'ACCEPTED', reason: 'Passed all hard gates' };
-        this.audit(job, successResult, 'All Rules');
-        return successResult;
+        // Log with full rule breakdown
+        this.audit(job, finalResult, ruleBreakdown);
+        return finalResult;
     }
 
-    private audit(job: Job, result: FilterResult, trigger: string) {
+    private audit(job: Job, result: FilterResult, ruleBreakdown: RuleResult[]) {
         AuditService.log({
             actionType: 'FILTER',
             jobId: job.id,
             verdict: result.status,
             details: {
                 reason: result.reason,
-                triggerRule: trigger
+                ruleBreakdown,
             },
             metadata: { jobTitle: job.title }
         });

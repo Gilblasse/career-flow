@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { ResumeProfile, Experience, Education } from '../../types';
-import { RESUME_PROFILE_MAX_COUNT } from '../../types';
+import { RESUME_VARIANT_MAX_COUNT } from '../../types';
 import { ProfileSelector, validateProfileName } from './ProfileSelector';
 import { 
     ArrowLeft, 
@@ -205,7 +205,9 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
             const updBullets: string[] = (upd as any)?.bullets || [];
             
             items.push(
-                <div key={i} className="grid grid-cols-[1fr_40px_1fr] gap-4 mb-5">
+                <div key={i} className="flex flex-col md:grid md:grid-cols-[1fr_40px_1fr] gap-4 mb-5">
+                    {/* Mobile label for Original */}
+                    <div className="md:hidden text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Current Version</div>
                     {/* Original */}
                     <div className={cn(
                         "p-5 rounded-lg border border-border",
@@ -247,11 +249,13 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                         )}
                     </div>
                     
-                    {/* Arrow */}
-                    <div className="flex items-center justify-center">
+                    {/* Arrow - hidden on mobile */}
+                    <div className="hidden md:flex items-center justify-center">
                         <ChevronRight size={20} className="text-muted-foreground" />
                     </div>
                     
+                    {/* Mobile label for Updated */}
+                    <div className="md:hidden text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1 mt-2">Updated Version</div>
                     {/* Updated */}
                     <div className={cn(
                         "p-5 rounded-lg border border-border",
@@ -305,9 +309,11 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
         const added = updated.filter(s => !original.includes(s));
         
         return (
-            <div className="grid grid-cols-[1fr_40px_1fr] gap-4 mb-5">
+            <div className="flex flex-col md:grid md:grid-cols-[1fr_40px_1fr] gap-4 mb-5">
+                {/* Mobile label for Original */}
+                <div className="md:hidden text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Current</div>
                 <div className={cn(
-                    "p-5 rounded-lg border border-border",
+                    "p-4 lg:p-5 rounded-lg border border-border",
                     removed.length > 0 ? "bg-red-50" : "bg-muted/50"
                 )}>
                     <div className="flex flex-wrap gap-2">
@@ -325,12 +331,15 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                     </div>
                 </div>
                 
-                <div className="flex items-center justify-center">
+                {/* Arrow - hidden on mobile */}
+                <div className="hidden md:flex items-center justify-center">
                     <ChevronRight size={20} className="text-muted-foreground" />
                 </div>
                 
+                {/* Mobile label for Updated */}
+                <div className="md:hidden text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1 mt-2">Updated</div>
                 <div className={cn(
-                    "p-5 rounded-lg border border-border",
+                    "p-4 lg:p-5 rounded-lg border border-border",
                     added.length > 0 ? "bg-green-50" : "bg-muted/50"
                 )}>
                     <div className="flex flex-wrap gap-2">
@@ -352,7 +361,7 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
     };
 
     return (
-        <div className="max-w-[1600px] mx-auto p-8">
+        <div className="w-full p-8">
             {/* Header */}
             <div className="flex items-center justify-between mb-9 pb-7 border-b">
                 <div className="flex items-center gap-5">
@@ -363,30 +372,30 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                     <div>
                         <h1 className="text-3xl font-bold text-foreground m-0">Review Changes</h1>
                         <p className="text-base text-muted-foreground mt-2">
-                            Compare your changes before saving to a Resume Profile
+                            Compare your changes before saving to a Resume Variant
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="grid grid-cols-[1fr_360px] gap-9">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 lg:gap-9">
                 {/* Comparison Panel */}
                 <div>
                     {/* Experience Comparison */}
                     <Card className="mb-7 overflow-hidden">
-                        <div className="flex items-center justify-between p-7 border-b bg-muted/50">
+                        <div className="flex items-center justify-between p-4 lg:p-7 border-b bg-muted/50">
                             <h2 className="flex items-center gap-3 text-lg font-semibold text-foreground m-0">
                                 <FileText size={20} className="text-primary" />
                                 Work Experience
                             </h2>
                         </div>
-                        <div className="grid grid-cols-[1fr_40px_1fr] gap-4 px-7 py-4 bg-muted border-b">
+                        <div className="hidden md:grid grid-cols-[1fr_40px_1fr] gap-4 px-4 lg:px-7 py-4 bg-muted border-b">
                             <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Current Version</span>
                             <span></span>
                             <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Updated Version</span>
                         </div>
-                        <div className="p-7">
+                        <div className="p-4 lg:p-7">
                             {renderExperienceComparison(
                                 originalSnapshot.experience,
                                 updatedSnapshot.experience
@@ -396,18 +405,18 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
 
                     {/* Skills Comparison */}
                     <Card className="overflow-hidden">
-                        <div className="flex items-center justify-between p-7 border-b bg-muted/50">
+                        <div className="flex items-center justify-between p-4 lg:p-7 border-b bg-muted/50">
                             <h2 className="flex items-center gap-3 text-lg font-semibold text-foreground m-0">
                                 <FileText size={20} className="text-primary" />
                                 Skills
                             </h2>
                         </div>
-                        <div className="grid grid-cols-[1fr_40px_1fr] gap-4 px-7 py-4 bg-muted border-b">
+                        <div className="hidden md:grid grid-cols-[1fr_40px_1fr] gap-4 px-4 lg:px-7 py-4 bg-muted border-b">
                             <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Current</span>
                             <span></span>
                             <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Updated</span>
                         </div>
-                        <div className="p-7">
+                        <div className="p-4 lg:p-7">
                             {renderSkillsComparison(
                                 originalSnapshot.skills,
                                 updatedSnapshot.skills
@@ -417,20 +426,20 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                 </div>
 
                 {/* Save Panel */}
-                <Card className="p-7 sticky top-8 h-fit">
+                <Card className="p-4 lg:p-7 lg:sticky lg:top-8 h-fit">
                     <h3 className="text-lg font-semibold text-foreground mb-2">Save to Profile</h3>
                     <p className="text-sm text-muted-foreground mb-7">
                         Choose an existing profile to update or create a new one.
                     </p>
 
                     {/* Profile Selector */}
-                    <Label className="mb-3">Resume Profile Name</Label>
+                    <Label className="mb-3">Resume Variant Name</Label>
                     <ProfileSelector
                         profiles={profiles}
                         selectedProfileId={selectedProfileId}
                         onSelect={handleProfileSelect}
                         showBadge={false}
-                        placeholder="Type or select a profile..."
+                        placeholder="Type or select a variant..."
                     />
 
                     {/* Selected Profile Display */}
@@ -450,7 +459,7 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                     {isCreatingNew && newProfileName && (
                         <div className="flex items-center gap-3 p-5 bg-green-50 border border-green-200 rounded-lg mt-5">
                             <div>
-                                <div className="text-xs font-medium text-green-600 uppercase">New Profile</div>
+                                <div className="text-xs font-medium text-green-600 uppercase">New Variant</div>
                                 <div className="font-mono text-base font-semibold text-green-700">{newProfileName}</div>
                             </div>
                         </div>
@@ -479,7 +488,7 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                         ) : (
                             <>
                                 <Save size={18} />
-                                {isCreatingNew ? 'Create Profile & Save' : 'Save Changes'}
+                                {isCreatingNew ? 'Create Variant & Save' : 'Save Changes'}
                             </>
                         )}
                     </Button>
@@ -490,8 +499,8 @@ const ResumeContextPage: React.FC<ResumeContextPageProps> = ({
                     <div className="flex items-start gap-3 p-5 bg-primary/10 rounded-lg">
                         <FileText size={16} className="text-primary shrink-0 mt-0.5" />
                         <span className="text-sm text-primary leading-relaxed">
-                            Each Resume Profile stores a complete snapshot of your experience, education, and skills.
-                            You can have up to {RESUME_PROFILE_MAX_COUNT} profiles.
+                            Each Resume Variant stores a complete snapshot of your experience, education, and skills.
+                            You can have up to {RESUME_VARIANT_MAX_COUNT} variants.
                         </span>
                     </div>
                 </Card>

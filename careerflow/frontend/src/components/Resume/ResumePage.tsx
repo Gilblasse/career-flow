@@ -691,10 +691,10 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
 
     // --- Editor View ---
     return (
-        <div className="grid grid-cols-2 gap-8 max-w-[1400px] mx-auto p-6 h-[calc(100vh-80px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 w-full p-4 lg:p-6 min-h-[calc(100vh-120px)] lg:h-[calc(100vh-80px)]">
 
             {/* LEFT: Editor Column */}
-            <div className="overflow-y-auto pr-2">
+            <div className="overflow-y-auto lg:pr-2">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-6">
                     <div className="flex items-start gap-4">
@@ -1071,7 +1071,7 @@ const ResumePage: React.FC<ResumePageProps> = ({ onNavigate, profileData, onRefr
                                 <Label className="text-[13px] font-medium mb-1.5 block">Company</Label>
                                 <Input value={currentExp?.company || ''} onChange={(e) => updateExperience('company', e.target.value)} />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <Label className="text-[13px] font-medium mb-1.5 block">Start Date</Label>
                                     <Input value={currentExp?.startDate || ''} onChange={(e) => updateExperience('startDate', e.target.value)} placeholder="Jan 2020" />

@@ -242,13 +242,13 @@ const KanbanBoard: React.FC = () => {
     // --- Render Helpers ---
 
     const renderBoard = () => (
-        <div className="flex gap-6 overflow-x-auto pb-5">
+        <div className="flex gap-4 lg:gap-6 overflow-x-auto pb-5 -mx-4 px-4 lg:mx-0 lg:px-0">
             {COLUMNS.map(column => (
                 <div
                     key={column.id}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => onDrop(e, column.id)}
-                    className="flex-shrink-0 w-[300px] flex flex-col"
+                    className="flex-shrink-0 w-[260px] sm:w-[280px] lg:w-[300px] flex flex-col"
                 >
                     {/* Column Header */}
                     <div className="mb-4">
@@ -468,54 +468,57 @@ const KanbanBoard: React.FC = () => {
     };
 
     return (
-        <div className="w-full min-h-[80vh]">
+        <div className="w-full min-h-[60vh] lg:min-h-[80vh]">
             {/* Header */}
-            <div className="flex justify-between items-center mb-8">
-                <div className="flex items-center gap-5">
-                    <h1 className="text-2xl font-bold">Application Process</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 lg:mb-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5">
+                    <h1 className="text-xl lg:text-2xl font-bold">Application Process</h1>
                     <div className="flex bg-muted rounded-lg p-1">
                         <Button 
                             variant={viewMode === 'board' ? 'secondary' : 'ghost'}
                             size="sm"
                             onClick={() => setViewMode('board')}
-                            className={cn(viewMode === 'board' && 'bg-background shadow-sm')}
+                            className={cn("text-xs sm:text-sm", viewMode === 'board' && 'bg-background shadow-sm')}
                         >
-                            <LayoutGrid className="h-4 w-4 mr-1.5" /> Board
+                            <LayoutGrid className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Board</span>
                         </Button>
                         <Button 
                             variant={viewMode === 'table' ? 'secondary' : 'ghost'}
                             size="sm"
                             onClick={() => setViewMode('table')}
-                            className={cn(viewMode === 'table' && 'bg-background shadow-sm')}
+                            className={cn("text-xs sm:text-sm", viewMode === 'table' && 'bg-background shadow-sm')}
                         >
-                            <List className="h-4 w-4 mr-1.5" /> Table
+                            <List className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Table</span>
                         </Button>
                         <Button 
                             variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
                             size="sm"
                             onClick={() => setViewMode('calendar')}
-                            className={cn(viewMode === 'calendar' && 'bg-background shadow-sm')}
+                            className={cn("text-xs sm:text-sm", viewMode === 'calendar' && 'bg-background shadow-sm')}
                         >
-                            <CalendarIcon className="h-4 w-4 mr-1.5" /> Calendar
+                            <CalendarIcon className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Calendar</span>
                         </Button>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="relative">
+                <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:flex-none">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             type="text"
                             placeholder="Search..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 w-40"
+                            className="pl-9 w-full sm:w-40"
                         />
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="hidden sm:flex">
                         <Filter className="h-4 w-4 mr-1.5" /> Filter
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="icon" className="sm:hidden h-9 w-9">
+                        <Filter className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" className="hidden sm:flex">
                         <Settings className="h-4 w-4 mr-1.5" /> Settings
                     </Button>
                 </div>

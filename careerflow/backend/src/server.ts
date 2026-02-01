@@ -6,6 +6,7 @@ import ResumeGenerator from './modules/resume/generator.js';
 import ResumeParser from './modules/resume/parser.js';
 import QueueProcessor from './modules/queue/processor.js';
 import JobStore from './modules/ingestion/job-store.js';
+import db from './services/db.js';
 import Logger from './services/logger.js';
 import { UserProfile, ResumeProfile } from './types.js';
 import fs from 'fs';
@@ -350,6 +351,55 @@ app.post('/api/queue/start', async (req, res) => {
 app.post('/api/queue/stop', (req, res) => {
     QueueProcessor.stop();
     res.json({ success: true, message: 'Queue stopping...' });
+});
+
+// GET /api/queue/status
+app.get('/api/queue/status', (req, res) => {
+    try {
+        const status = QueueProcessor.getStatus();
+        res.json(status);
+    } catch (error) {
+        Logger.error('API Error: GET /api/queue/status', error);
+        res.status(500).json({ error: 'Failed to fetch queue status' });
+    }
+});
+
+// GET /api/audit/:jobId - Get audit logs for a specific job
+app.get('/api/audit/:jobId', (req, res) => {
+    try {
+        const jobId = parseInt(req.params.jobId, 10);
+        if (isNaN(jobId)) {
+            res.status(400).json({ error: 'Invalid job ID' });
+            return;
+        }
+
+        const stmt = db.prepare(`
+            SELECT id, timestamp, action_type as actionType, verdict, details, metadata
+            FROM audit_logs
+            WHERE job_id = ?
+            ORDER BY timestamp DESC
+        `);
+        const rows = stmt.all(jobId) as any[];
+
+        const auditEntries = rows.map((row) => ({
+            id: row.id,
+            timestamp: row.timestamp,
+            actionType: row.actionType,
+            verdict: row.verdict,
+            details: JSON.parse(row.details || '{}'),
+            metadata: JSON.parse(row.metadata || '{}'),
+        }));
+
+        res.json(auditEntries);
+    } catch (error) {
+        Logger.error('API Error: GET /api/audit/:jobId', error);
+        res.status(500).json({ error: 'Failed to fetch audit logs' });
+    }
+});
+    } catch (error) {
+        Logger.error('API Error: GET /api/queue/status', error);
+        res.status(500).json({ error: 'Failed to fetch queue status' });
+    }
 });
 
 // GET /api/stats

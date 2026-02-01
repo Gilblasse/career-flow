@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { ResumeProfile } from '../../types';
-import { RESUME_PROFILE_MAX_LENGTH, RESUME_PROFILE_MAX_COUNT, RESUME_PROFILE_NAME_REGEX } from '../../types';
+import { RESUME_VARIANT_MAX_LENGTH, RESUME_VARIANT_MAX_COUNT, RESUME_VARIANT_NAME_REGEX } from '../../types';
 import { Check, ChevronsUpDown, Plus, AlertCircle, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ interface ProfileSelectorProps {
     onSelect: (profileId: string | null, newProfileName?: string) => void;
     disabled?: boolean;
     showBadge?: boolean;
+    /** @default "Select or create variant..." */
     placeholder?: string;
     allowCreate?: boolean;
 }
@@ -69,22 +70,22 @@ export function validateProfileName(
     currentProfileId?: string | null
 ): string | null {
     if (!name) {
-        return 'Profile name is required';
+        return 'Variant name is required';
     }
 
-    if (name.length > RESUME_PROFILE_MAX_LENGTH) {
-        return `Profile name cannot exceed ${RESUME_PROFILE_MAX_LENGTH} characters`;
+    if (name.length > RESUME_VARIANT_MAX_LENGTH) {
+        return `Variant name cannot exceed ${RESUME_VARIANT_MAX_LENGTH} characters`;
     }
 
-    if (!RESUME_PROFILE_NAME_REGEX.test(name)) {
-        return 'Profile name must be lowercase letters separated by dashes (e.g., software-engineering)';
+    if (!RESUME_VARIANT_NAME_REGEX.test(name)) {
+        return 'Variant name must be lowercase letters separated by dashes (e.g., software-engineering)';
     }
 
     const duplicate = existingProfiles.find(
         p => p.name === name && p.id !== currentProfileId
     );
     if (duplicate) {
-        return 'Profile name already exists';
+        return 'Variant name already exists';
     }
 
     return null;
@@ -96,7 +97,7 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
     onSelect,
     disabled = false,
     showBadge = true,
-    placeholder = 'Select or create profile...',
+    placeholder = 'Select or create variant...',
     allowCreate = true
 }) => {
     const [inputValue, setInputValue] = useState('');
@@ -130,8 +131,8 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
         return normalized.length > 0 && !exactMatch;
     }, [inputValue, exactMatch, allowCreate]);
 
-    // Can we add more profiles?
-    const canAddMore = profiles.length < RESUME_PROFILE_MAX_COUNT;
+    // Can we add more variants?
+    const canAddMore = profiles.length < RESUME_VARIANT_MAX_COUNT;
 
     const handleSelectProfile = (profile: ResumeProfile) => {
         setInputValue(profile.name);
@@ -151,7 +152,7 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
         }
 
         if (!canAddMore) {
-            setError(`Maximum of ${RESUME_PROFILE_MAX_COUNT} profiles allowed`);
+            setError(`Maximum of ${RESUME_VARIANT_MAX_COUNT} variants allowed`);
             return;
         }
 
@@ -194,7 +195,7 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
                         {selectedProfile.name}
                     </Badge>
                     <span className="text-xs text-muted-foreground ml-auto">
-                        {profiles.length}/{RESUME_PROFILE_MAX_COUNT} profiles
+                        {profiles.length}/{RESUME_VARIANT_MAX_COUNT} variants
                     </span>
                 </div>
             )}
@@ -219,7 +220,7 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                     <Command shouldFilter={false}>
                         <CommandInput
-                            placeholder="Type profile name..."
+                            placeholder="Type variant name..."
                             value={inputValue}
                             onValueChange={(value: string) => {
                                 const normalized = normalizeForTyping(value);
@@ -230,14 +231,14 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
                         />
                         <CommandList>
                             {filteredProfiles.length === 0 && !isNewProfile && inputValue && (
-                                <CommandEmpty>No profiles match "{inputValue}"</CommandEmpty>
+                                <CommandEmpty>No variants match "{inputValue}"</CommandEmpty>
                             )}
                             {filteredProfiles.length === 0 && !inputValue && (
-                                <CommandEmpty>No profiles yet. Type a name to create one.</CommandEmpty>
+                                <CommandEmpty>No variants yet. Type a name to create one.</CommandEmpty>
                             )}
                             
                             {filteredProfiles.length > 0 && (
-                                <CommandGroup heading="Profiles">
+                                <CommandGroup heading="Variants">
                                     {filteredProfiles.map((profile) => (
                                         <CommandItem
                                             key={profile.id}
@@ -282,13 +283,13 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
                                             <Plus className="h-4 w-4" />
                                             {canAddMore ? (
                                                 <>
-                                                    Create new profile:{" "}
+                                                    Create new variant:{" "}
                                                     <code className="font-mono bg-muted px-1 rounded">
                                                         {normalizeProfileName(inputValue)}
                                                     </code>
                                                 </>
                                             ) : (
-                                                <>Maximum {RESUME_PROFILE_MAX_COUNT} profiles reached</>
+                                                <>Maximum {RESUME_VARIANT_MAX_COUNT} variants reached</>
                                             )}
                                         </CommandItem>
                                     </CommandGroup>

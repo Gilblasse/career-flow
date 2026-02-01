@@ -48,7 +48,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { id: 'profile', label: 'Profile', icon: <User size={18} />, description: 'Personal information' },
-    { id: 'resume-profiles', label: 'Resume Profiles', icon: <Bookmark size={18} />, description: 'Manage resume variants' },
+    { id: 'resume-profiles', label: 'Resume Variants', icon: <Bookmark size={18} />, description: 'Manage resume variants' },
     { id: 'experience', label: 'Work Experience', icon: <Briefcase size={18} />, description: 'Jobs & resume import' },
     { id: 'education', label: 'Education', icon: <GraduationCap size={18} />, description: 'Degrees & courses' },
     { id: 'skills', label: 'Skills', icon: <Award size={18} />, description: 'Technical & soft skills' },
@@ -775,72 +775,70 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
     };
 
     // Render Resume Profiles Section
+    // Get the currently selected profile object
+    const selectedResumeProfile = resumeProfiles.find(p => p.id === activeResumeProfileId) || null;
+
     const renderResumeProfilesSection = () => (
         <div className="flex flex-col gap-5">
-            {/* Header with Profile Selector */}
-            <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h2 className="text-lg font-semibold text-foreground">Resume Profiles</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Manage your tailored resume variations ({resumeProfiles.length}/{RESUME_PROFILE_MAX_COUNT} profiles)
-                        </p>
-                    </div>
-                </div>
+            {/* Header with Variant Selector */}
+            <Card className="p-7">
+                <h2 className="text-lg font-semibold text-foreground mb-2">Resume Variants</h2>
+                <p className="text-sm text-muted-foreground mb-7">
+                    Manage your tailored resume variations. Select a variant to load its data.
+                </p>
 
-                {resumeProfiles.length === 0 ? (
-                    <div className="py-10 px-5 text-center bg-muted/50 rounded-xl border border-dashed">
+                {/* Variant Selector Dropdown */}
+                <Label className="mb-3">Active Resume Variant</Label>
+                <ProfileSelector
+                    profiles={resumeProfiles}
+                    selectedProfileId={activeResumeProfileId}
+                    onSelect={(profileId) => {
+                        handleResumeProfileSelect(profileId);
+                    }}
+                    showBadge={true}
+                    placeholder="Select variant..."
+                    allowCreate={false}
+                />
+
+                {/* Selected Variant Display */}
+                {selectedResumeProfile && (
+                    <div className="flex items-center justify-between p-5 bg-primary/10 border border-primary/20 rounded-lg mt-5">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle size={18} className="text-primary" />
+                            <div>
+                                <div className="font-mono text-base font-semibold text-primary">
+                                    {selectedResumeProfile.name}
+                                </div>
+                                <div className="text-xs text-primary/80">
+                                    {selectedResumeProfile.resumeSnapshot?.experience?.length || 0} experiences • {selectedResumeProfile.resumeSnapshot?.skills?.length || 0} skills
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                    Updated {new Date(selectedResumeProfile.updatedAt).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setProfileToDelete(selectedResumeProfile)}
+                            className="gap-1.5"
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                        </Button>
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {resumeProfiles.length === 0 && (
+                    <div className="py-10 px-5 text-center bg-muted/50 rounded-xl border border-dashed mt-5">
                         <Bookmark className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
                         <h3 className="text-sm font-semibold text-foreground mb-2">
-                            No Resume Profiles Yet
+                            No Resume Variants Yet
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-[300px] mx-auto">
-                            Create your first resume profile by going to the Resume page and saving your changes.
+                            Create your first resume variant using the dropdown above.
                         </p>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-3">
-                        {resumeProfiles.map((profile) => (
-                            <div
-                                key={profile.id}
-                                onClick={() => handleResumeProfileSelect(profile.id)}
-                                className={cn(
-                                    "flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all",
-                                    activeResumeProfileId === profile.id 
-                                        ? "bg-primary/5 border-2 border-primary" 
-                                        : "bg-muted/50 border border-border hover:bg-muted hover:border-muted-foreground/20"
-                                )}
-                            >
-                                <div className="flex items-center gap-3.5">
-                                    <div className={cn(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center",
-                                        activeResumeProfileId === profile.id ? "bg-primary/20" : "bg-primary/10"
-                                    )}>
-                                        <Bookmark className="h-4.5 w-4.5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-semibold font-mono">
-                                            {profile.name}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground mt-0.5">
-                                            {profile.resumeSnapshot?.experience?.length || 0} experiences • {profile.resumeSnapshot?.skills?.length || 0} skills
-                                        </div>
-                                        <div className="text-[11px] text-muted-foreground/60 mt-0.5">
-                                            Updated {new Date(profile.updatedAt).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                </div>
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={(e) => { e.stopPropagation(); setProfileToDelete(profile); }}
-                                    className="gap-1.5"
-                                >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    Delete
-                                </Button>
-                            </div>
-                        ))}
                     </div>
                 )}
             </Card>
@@ -854,15 +852,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                                 <AlertCircle className="h-5 w-5 text-destructive" />
                             </div>
                             <div>
-                                <DialogTitle>Delete Profile</DialogTitle>
+                                <DialogTitle>Delete Variant</DialogTitle>
                                 <DialogDescription>This action cannot be undone</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
 
                     <p className="text-sm text-foreground leading-relaxed">
-                        Are you sure you want to delete the profile <strong className="font-mono">"{profileToDelete?.name}"</strong>? 
-                        All saved resume data for this profile will be permanently removed.
+                        Are you sure you want to delete the variant <strong className="font-mono">"{profileToDelete?.name}"</strong>? 
+                        All saved resume data for this variant will be permanently removed.
                     </p>
 
                     <DialogFooter>
@@ -882,7 +880,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                             ) : (
                                 <>
                                     <Trash2 className="h-4 w-4 mr-1.5" />
-                                    Delete Profile
+                                    Delete Variant
                                 </>
                             )}
                         </Button>
@@ -979,7 +977,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                         <InputField label="First Name" name="firstName" value={user.firstName} onChange={handleChange} required error={validationErrors.firstName} />
                         <InputField label="Last Name" name="lastName" value={user.lastName} onChange={handleChange} required error={validationErrors.lastName} />
                         <InputField label="Role / Job Title" name="role" value={user.role} onChange={handleChange} icon={<Briefcase className="h-4 w-4" />} />
@@ -1008,7 +1006,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                     <h3 className="text-base font-semibold text-foreground mb-5">
                         Voluntary Self-Identification
                     </h3>
-                    <div className="grid grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                         <div className="flex flex-col gap-2">
                             <Label>Gender</Label>
                             <Select value={user.gender} onValueChange={(value: string) => setUser(prev => ({ ...prev, gender: value }))}>
@@ -1112,7 +1110,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
-                            <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                                 <Input placeholder="Job Title" value={exp.title || ''} onChange={(e) => { const n = [...experiences]; n[i].title = e.target.value; setExperiences(n); }} />
                                 <Input placeholder="Company" value={exp.company || ''} onChange={(e) => { const n = [...experiences]; n[i].company = e.target.value; setExperiences(n); }} />
                                 <Input placeholder="Start Date" value={exp.startDate || ''} onChange={(e) => { const n = [...experiences]; n[i].startDate = e.target.value; setExperiences(n); }} />
@@ -1155,7 +1153,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Input placeholder="Institution" value={edu.institution || ''} onChange={(e) => { const n = [...educations]; n[i].institution = e.target.value; setEducations(n); }} />
                                 <Input placeholder="Degree" value={edu.degree || ''} onChange={(e) => { const n = [...educations]; n[i].degree = e.target.value; setEducations(n); }} />
                                 <Input placeholder="Field of Study" value={edu.fieldOfStudy || ''} onChange={(e) => { const n = [...educations]; n[i].fieldOfStudy = e.target.value; setEducations(n); }} />
@@ -1251,7 +1249,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
-                            <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                                 <Input placeholder="Project Name" value={proj.name || ''} onChange={(e) => { const n = [...projects]; n[i].name = e.target.value; setProjects(n); }} />
                                 <Input placeholder="URL (optional)" value={proj.url || ''} onChange={(e) => { const n = [...projects]; n[i].url = e.target.value; setProjects(n); }} />
                             </div>
@@ -1292,12 +1290,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Input placeholder="Certification Name" value={cert.name || ''} onChange={(e) => { const n = [...certifications]; n[i].name = e.target.value; setCertifications(n); }} />
                                 <Input placeholder="Issuing Organization" value={cert.issuer || ''} onChange={(e) => { const n = [...certifications]; n[i].issuer = e.target.value; setCertifications(n); }} />
                                 <Input placeholder="Issue Date" value={cert.issueDate || ''} onChange={(e) => { const n = [...certifications]; n[i].issueDate = e.target.value; setCertifications(n); }} />
                                 <Input placeholder="Expiration Date (optional)" value={cert.expirationDate || ''} onChange={(e) => { const n = [...certifications]; n[i].expirationDate = e.target.value; setCertifications(n); }} />
-                                <Input placeholder="Credential ID (optional)" value={cert.credentialId || ''} onChange={(e) => { const n = [...certifications]; n[i].credentialId = e.target.value; setCertifications(n); }} className="col-span-2" />
+                                <Input placeholder="Credential ID (optional)" value={cert.credentialId || ''} onChange={(e) => { const n = [...certifications]; n[i].credentialId = e.target.value; setCertifications(n); }} className="sm:col-span-2" />
                             </div>
                         </div>
                     ))}
@@ -1339,7 +1337,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
-                            <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                                 <Input placeholder="Title (e.g., Employee of the Month)" value={acc.title || ''} onChange={(e) => { const n = [...accomplishments]; n[i].title = e.target.value; setAccomplishments(n); }} />
                                 <Input placeholder="Date" value={acc.date || ''} onChange={(e) => { const n = [...accomplishments]; n[i].date = e.target.value; setAccomplishments(n); }} />
                             </div>
@@ -1377,86 +1375,73 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
     }
 
     return (
-        <div className="flex gap-8 max-w-[1200px] mx-auto">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
 
-            {/* Side Navigation */}
-            <div className="w-[260px] flex-shrink-0">
-                <Card className="p-3 sticky top-5">
-                    <div className="px-4 py-3 mb-2">
+            {/* Side Navigation - horizontal scroll on mobile, vertical on desktop */}
+            <div className="lg:w-[260px] flex-shrink-0 -mx-4 px-4 lg:mx-0 lg:px-0">
+                <Card className="p-2 lg:p-3 lg:sticky lg:top-5">
+                    <div className="hidden lg:block px-4 py-3 mb-2">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             My Profile
                         </h3>
                     </div>
 
-                    {navItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveSection(item.id)}
-                            className={cn(
-                                "w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all text-left",
-                                activeSection === item.id 
-                                    ? "bg-primary/5 text-primary" 
-                                    : "text-foreground hover:bg-muted"
-                            )}
-                        >
-                            <div className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center",
-                                activeSection === item.id 
-                                    ? "bg-primary text-primary-foreground" 
-                                    : "bg-muted text-muted-foreground"
-                            )}>
-                                {item.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium">{item.label}</div>
-                                <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
-                            </div>
-                            {activeSection === item.id && <ChevronRight className="h-4 w-4 text-primary" />}
-                        </button>
-                    ))}
+                    {/* Mobile: horizontal scroll tabs */}
+                    <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+                        {navItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveSection(item.id)}
+                                className={cn(
+                                    "flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg cursor-pointer transition-all text-left whitespace-nowrap",
+                                    activeSection === item.id 
+                                        ? "bg-primary/5 text-primary" 
+                                        : "text-foreground hover:bg-muted"
+                                )}
+                            >
+                                <div className={cn(
+                                    "w-8 h-8 lg:w-9 lg:h-9 rounded-lg flex items-center justify-center shrink-0",
+                                    activeSection === item.id 
+                                        ? "bg-primary text-primary-foreground" 
+                                        : "bg-muted text-muted-foreground"
+                                )}>
+                                    {item.icon}
+                                </div>
+                                <div className="flex-1 min-w-0 hidden lg:block">
+                                    <div className="text-sm font-medium">{item.label}</div>
+                                    <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
+                                </div>
+                                <span className="lg:hidden text-xs font-medium">{item.label}</span>
+                                {activeSection === item.id && <ChevronRight className="h-4 w-4 text-primary hidden lg:block" />}
+                            </button>
+                        ))}
+                    </div>
                 </Card>
             </div>
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">
                 {/* Header */}
-                <div className="relative mb-8">
-                    <div className="h-[120px] bg-gradient-to-r from-blue-100 to-blue-50 rounded-2xl relative overflow-hidden">
-                        <div className="absolute -top-5 -left-5 w-[150px] h-[150px] bg-blue-200 rounded-full opacity-60" />
-                        <div className="absolute top-5 right-[10%] w-[200px] h-[200px] bg-blue-100 rounded-full opacity-80" />
+                <div className="relative mb-6 lg:mb-8">
+                    <div className="h-[80px] lg:h-[120px] bg-gradient-to-r from-blue-100 to-blue-50 rounded-xl lg:rounded-2xl relative overflow-hidden">
+                        <div className="absolute -top-5 -left-5 w-[100px] lg:w-[150px] h-[100px] lg:h-[150px] bg-blue-200 rounded-full opacity-60" />
+                        <div className="absolute top-5 right-[10%] w-[130px] lg:w-[200px] h-[130px] lg:h-[200px] bg-blue-100 rounded-full opacity-80" />
                     </div>
 
-                    <div className="absolute -bottom-9 left-6 w-20 h-20 rounded-full bg-background p-[3px] shadow-md">
+                    <div className="absolute -bottom-7 lg:-bottom-9 left-4 lg:left-6 w-16 lg:w-20 h-16 lg:h-20 rounded-full bg-background p-[3px] shadow-md">
                         <div className="w-full h-full rounded-full overflow-hidden">
                             <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
                         </div>
                     </div>
 
-                    <div className="ml-[120px] mt-2 flex items-start justify-between">
+                    <div className="ml-[88px] lg:ml-[120px] mt-2 flex items-start justify-between">
                         <div>
-                            <h1 className="text-xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
+                            <h1 className="text-lg lg:text-xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
                             {(user.role || user.company) && (
-                                <p className="text-sm text-muted-foreground mt-0.5">
+                                <p className="text-xs lg:text-sm text-muted-foreground mt-0.5">
                                     {user.role}{user.role && user.company ? ' at ' : ''}{user.company}
                                 </p>
                             )}
-                        </div>
-                        
-                        {/* Resume Profile Selector */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                Profile:
-                            </span>
-                            <div className="w-40">
-                                <ProfileSelector
-                                    profiles={resumeProfiles}
-                                    selectedProfileId={activeResumeProfileId}
-                                    onSelect={(profileId) => handleResumeProfileSelect(profileId)}
-                                    showBadge={false}
-                                    placeholder={activeProfileName}
-                                    allowCreate={false}
-                                />
-                            </div>
                         </div>
                     </div>
                 </div>
