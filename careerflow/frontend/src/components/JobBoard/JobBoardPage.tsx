@@ -19,7 +19,9 @@ import {
     CheckCircle2,
     XCircle,
     Eye,
-    Monitor
+    Monitor,
+    ExternalLink,
+    RefreshCw
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +35,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { useAuth } from '@/components/Auth';
 import {
     isDevMode,
     getMockQueueStatus,
@@ -78,6 +81,7 @@ export interface JobListing {
     appliedAt?: string;
     logoUrl?: string;
     logoColor?: string;
+    jobUrl?: string;
 }
 
 // =============================================================================
@@ -99,6 +103,7 @@ const MOCK_JOBS: JobListing[] = [
         matchScore: 92,
         status: 'new',
         logoColor: '#3B82F6',
+        jobUrl: 'https://boards.greenhouse.io/techcorp/jobs/12345',
     },
     {
         id: '2',
@@ -115,6 +120,7 @@ const MOCK_JOBS: JobListing[] = [
         status: 'applied',
         appliedAt: '1 day ago',
         logoColor: '#10B981',
+        jobUrl: 'https://jobs.lever.co/startupxyz/67890',
     },
     {
         id: '3',
@@ -130,6 +136,7 @@ const MOCK_JOBS: JobListing[] = [
         matchScore: 85,
         status: 'new',
         logoColor: '#F59E0B',
+        jobUrl: 'https://jobs.ashbyhq.com/designco/11111',
     },
     {
         id: '4',
@@ -145,6 +152,7 @@ const MOCK_JOBS: JobListing[] = [
         matchScore: 90,
         status: 'interviewing',
         logoColor: '#8B5CF6',
+        jobUrl: 'https://boards.greenhouse.io/dataflow/jobs/22222',
     },
     {
         id: '5',
@@ -160,6 +168,7 @@ const MOCK_JOBS: JobListing[] = [
         matchScore: 78,
         status: 'new',
         logoColor: '#EC4899',
+        jobUrl: 'https://jobs.lever.co/cloudsystems/33333',
     },
     {
         id: '6',
@@ -175,6 +184,7 @@ const MOCK_JOBS: JobListing[] = [
         matchScore: 72,
         status: 'new',
         logoColor: '#EF4444',
+        jobUrl: 'https://webagency.com/careers/react-developer',
     },
     {
         id: '7',
@@ -190,6 +200,7 @@ const MOCK_JOBS: JobListing[] = [
         matchScore: 83,
         status: 'new',
         logoColor: '#06B6D4',
+        jobUrl: 'https://boards.greenhouse.io/fintechpro/jobs/44444',
     },
     {
         id: '8',
@@ -204,6 +215,7 @@ const MOCK_JOBS: JobListing[] = [
         description: 'Lead technical architecture and mentor engineering teams across the organization.',
         matchScore: 95,
         status: 'new',
+        jobUrl: 'https://jobs.lever.co/enterprisecorp/55555',
         logoColor: '#6366F1',
     },
 ];
@@ -963,6 +975,19 @@ const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, onClose, onApply
                     </span>
                     <JobStatusBadge status={job.status} isAutoApplyEnabled={isAutoApplyEnabled} />
                 </div>
+
+                {/* Job URL Link */}
+                {job.jobUrl && (
+                    <a 
+                        href={job.jobUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-3 text-sm text-primary hover:underline"
+                    >
+                        <ExternalLink className="h-4 w-4" />
+                        View Original Job Posting
+                    </a>
+                )}
             </div>
 
             {/* Content */}
@@ -1029,10 +1054,48 @@ interface JobBoardPageProps {
     onNavigate?: (view: string, data?: any) => void;
 }
 
+/**
+ * Map API job response to frontend JobListing format
+ */
+function mapApiJobToListing(apiJob: any): JobListing {
+    // Calculate relative time for postedAt
+    const postedDate = apiJob.posted_at ? new Date(apiJob.posted_at) : new Date(apiJob.created_at);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - postedDate.getTime()) / (1000 * 60 * 60 * 24));
+    let postedAt = 'Just now';
+    if (diffDays === 1) postedAt = '1 day ago';
+    else if (diffDays > 1 && diffDays < 7) postedAt = `${diffDays} days ago`;
+    else if (diffDays >= 7 && diffDays < 14) postedAt = '1 week ago';
+    else if (diffDays >= 14) postedAt = `${Math.floor(diffDays / 7)} weeks ago`;
+
+    // Generate a consistent color based on company name
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#EF4444', '#06B6D4', '#6366F1'];
+    const colorIndex = apiJob.company.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % colors.length;
+
+    return {
+        id: apiJob.id,
+        title: apiJob.title,
+        company: apiJob.company,
+        location: apiJob.location || 'Location not specified',
+        isRemote: apiJob.is_remote || false,
+        salaryMin: apiJob.salary_min || 0,
+        salaryMax: apiJob.salary_max || 0,
+        employmentType: (apiJob.employment_type as EmploymentType) || 'full-time',
+        postedAt,
+        description: apiJob.description || 'No description available.',
+        matchScore: apiJob.matchScore || 50,
+        status: 'new' as JobStatus,
+        logoUrl: apiJob.logo_url || undefined,
+        logoColor: colors[colorIndex],
+        jobUrl: apiJob.job_url,
+    };
+}
+
 const JobBoardPage: React.FC<JobBoardPageProps> = ({ onNavigate: _onNavigate }) => {
-    // Use dev mode mock data when VITE_DEV_MODE=true
-    const initialJobs = isDevMode() ? DEV_MOCK_JOBS : MOCK_JOBS;
-    const [jobs, setJobs] = useState<JobListing[]>(initialJobs);
+    const { session } = useAuth();
+    const [jobs, setJobs] = useState<JobListing[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
     const [dryRun, setDryRun] = useState(true);
     const [queueStatus, setQueueStatus] = useState<QueueStatus>({
@@ -1053,12 +1116,81 @@ const JobBoardPage: React.FC<JobBoardPageProps> = ({ onNavigate: _onNavigate }) 
         minMatchScore: 0,
     });
 
-    // Log dev mode status on mount
-    useEffect(() => {
+    // Fetch jobs from the API
+    const fetchJobs = useCallback(async () => {
+        // Use mock data in dev mode
         if (isDevMode()) {
-            console.log('%c[JobBoard] Dev mode active - using simulated queue', 'color: #10B981;');
+            console.log('%c[JobBoard] Dev mode active - using mock data', 'color: #10B981;');
+            setJobs(DEV_MOCK_JOBS);
+            setLoading(false);
+            return;
         }
-    }, []);
+
+        if (!session?.access_token) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Build query params from filters
+            const params = new URLSearchParams();
+            if (filters.search) params.set('search', filters.search);
+            if (filters.location) params.set('location', filters.location);
+            if (filters.workType === 'remote') params.set('isRemote', 'true');
+            if (filters.employmentTypes.length > 0) {
+                params.set('employmentType', filters.employmentTypes[0]); // API supports single type for now
+            }
+            params.set('limit', '50');
+
+            const res = await fetch(`http://localhost:3001/api/jobs?${params.toString()}`, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to fetch jobs: ${res.status}`);
+            }
+
+            const data = await res.json();
+            const mappedJobs = (data.jobs || []).map(mapApiJobToListing);
+            
+            // Apply client-side filters that API doesn't support
+            let filteredJobs = mappedJobs;
+            
+            // Filter by work type (onsite)
+            if (filters.workType === 'onsite') {
+                filteredJobs = filteredJobs.filter((j: JobListing) => !j.isRemote);
+            }
+            
+            // Filter by min match score
+            if (filters.minMatchScore > 0) {
+                filteredJobs = filteredJobs.filter((j: JobListing) => j.matchScore >= filters.minMatchScore);
+            }
+
+            setJobs(filteredJobs);
+        } catch (err) {
+            console.error('Failed to fetch jobs:', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
+            // Fall back to mock data on error
+            setJobs(MOCK_JOBS);
+        } finally {
+            setLoading(false);
+        }
+    }, [session?.access_token, filters.search, filters.location, filters.workType, filters.employmentTypes, filters.minMatchScore]);
+
+    // Fetch jobs on mount and when filters change (debounced)
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchJobs();
+        }, 300); // Debounce filter changes
+
+        return () => clearTimeout(timeoutId);
+    }, [fetchJobs]);
 
     // Helper to update job statuses based on queue state
     const updateJobStatuses = useCallback((status: QueueStatus) => {
@@ -1272,41 +1404,100 @@ const JobBoardPage: React.FC<JobBoardPageProps> = ({ onNavigate: _onNavigate }) 
                 />
 
                 {/* Header */}
-                <div className="mb-6">
+                <div className="mb-6 flex items-center justify-between">
                     <p className="text-muted-foreground">
-                        Showing <span className="font-medium text-foreground">{filteredJobs.length}</span> jobs
-                        {appliedCount > 0 && (
-                            <span className="ml-2 text-green-600">• {appliedCount} applied</span>
+                        {loading ? (
+                            <span className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Loading jobs...
+                            </span>
+                        ) : (
+                            <>
+                                Showing <span className="font-medium text-foreground">{filteredJobs.length}</span> jobs
+                                {appliedCount > 0 && (
+                                    <span className="ml-2 text-green-600">• {appliedCount} applied</span>
+                                )}
+                            </>
                         )}
                     </p>
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={fetchJobs}
+                        disabled={loading}
+                        className="gap-2"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
                 </div>
+
+                {/* Error State */}
+                {error && (
+                    <Card className="mb-6 border-amber-200 bg-amber-50">
+                        <CardContent className="p-4 flex items-center gap-3 text-amber-800">
+                            <AlertTriangle className="h-5 w-5" />
+                            <div>
+                                <p className="font-medium">Failed to load jobs</p>
+                                <p className="text-sm">{error}. Showing cached data.</p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={fetchJobs} className="ml-auto">
+                                Retry
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Loading State */}
+                {loading && jobs.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+                        <p className="text-muted-foreground">Loading jobs from catalog...</p>
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {!loading && filteredJobs.length === 0 && (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-medium mb-2">No jobs found</h3>
+                            <p className="text-muted-foreground mb-4">
+                                {jobs.length === 0 
+                                    ? 'The job catalog is empty. Jobs are updated periodically via automated scraping.'
+                                    : 'Try adjusting your filters to see more results.'}
+                            </p>
+                            {jobs.length > 0 && (
+                                <Button variant="outline" onClick={() => setFilters({
+                                    search: '',
+                                    location: '',
+                                    workType: 'all',
+                                    employmentTypes: [],
+                                    minMatchScore: 0,
+                                })}>
+                                    Clear Filters
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Job Cards */}
-                <div className="space-y-4">
-                    {filteredJobs.map(job => (
-                        <JobCard
-                            key={job.id}
-                            job={job}
-                            onApply={handleApply}
-                            onSkip={handleSkip}
-                            onClick={setSelectedJob}
-                            isSelected={selectedJob?.id === job.id}
-                            isAutoApplyEnabled={isAutoApplyEnabled}
-                        />
-                    ))}
-
-                    {filteredJobs.length === 0 && (
-                        <Card>
-                            <CardContent className="py-12 text-center">
-                                <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-medium mb-2">No jobs found</h3>
-                                <p className="text-muted-foreground">
-                                    Try adjusting your filters to see more results.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
+                {!loading && filteredJobs.length > 0 && (
+                    <div className="space-y-4">
+                        {filteredJobs.map(job => (
+                            <JobCard
+                                key={job.id}
+                                job={job}
+                                onApply={handleApply}
+                                onSkip={handleSkip}
+                                onClick={setSelectedJob}
+                                isSelected={selectedJob?.id === job.id}
+                                isAutoApplyEnabled={isAutoApplyEnabled}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Right: Job Detail Drawer */}

@@ -1,12 +1,10 @@
-import { Job } from '../../types.js';
-import { RESUME_INVENTORY, Resume } from './inventory.js';
+import { Job, ResumeProfile, UserProfile } from '../../types.js';
+import { KEYWORD_CATEGORIES, calculateKeywordScore, findBestCategory } from '../../config/keywords.js';
 import Logger from '../../services/logger.js';
 import AuditService from '../../services/audit.js';
 
-import ProfileService from '../../services/profile.js';
-
 export interface SelectionResult {
-    selectedResumeId: string;
+    selectedProfileName: string;
     matchScore: number;
     reason: string;
 }
@@ -14,41 +12,62 @@ export interface SelectionResult {
 export class ResumeEngine {
 
     /**
-     * Selects the single best resume from the inventory for a given job.
+     * Selects the best resume profile for a given job based on user's resume profiles.
+     * 
+     * @param job - The job to match against
+     * @param profile - The user's profile containing resumeProfiles
+     * @returns Selection result with the chosen profile name and match score
      */
-    public selectResume(job: Job): SelectionResult {
-        const config = ProfileService.getConfig();
-        const userSkills = config.skills || [];
+    public selectResumeProfile(job: Job, profile: UserProfile): SelectionResult {
+        const resumeProfiles = profile.resumeProfiles || [];
+        const jobText = (job.title + ' ' + (job.description || '')).toLowerCase();
 
-        let bestMatch: Resume | null = null;
+        // If no resume profiles defined, use the 'default' or first available
+        if (resumeProfiles.length === 0) {
+            Logger.warn(`User has no resume profiles defined, using default`);
+            return {
+                selectedProfileName: 'default',
+                matchScore: 0,
+                reason: 'No resume profiles defined, using default',
+            };
+        }
+
+        // Find best matching category for the job
+        const bestCategory = findBestCategory(jobText);
+        
+        let bestMatch: ResumeProfile = resumeProfiles[0];
         let highestScore = -1;
-        const jobText = (job.title + ' ' + job.description).toLowerCase();
 
-        for (const resume of RESUME_INVENTORY) {
-            // Simple keyword overlap score
+        for (const resumeProfile of resumeProfiles) {
+            // Score based on targetRoles alignment
             let score = 0;
-            for (const keyword of resume.keywords) {
-                if (jobText.includes(keyword.toLowerCase())) {
-                    score++;
+
+            // Check if job title matches any target roles
+            const jobTitle = job.title.toLowerCase();
+            for (const targetRole of resumeProfile.targetRoles || []) {
+                if (jobTitle.includes(targetRole.toLowerCase())) {
+                    score += 5; // Strong match
                 }
             }
 
+            // Add score for category keyword matches
+            const categoryKeywords = bestCategory.keywords;
+            score += calculateKeywordScore(jobText, categoryKeywords);
+
+            // Add user skills that appear in job
+            const userSkills = profile.skills || [];
+            score += calculateKeywordScore(jobText, userSkills);
+
             if (score > highestScore) {
                 highestScore = score;
-                bestMatch = resume;
+                bestMatch = resumeProfile;
             }
         }
 
-        if (!bestMatch) {
-            // Fallback to 'Lyra' (General) or error if strict
-            bestMatch = RESUME_INVENTORY.find(r => r.id === 'lyra')!;
-            Logger.warn(`No strong match for job ${job.id}, defaulting to Lyra.`);
-        }
-
         const result: SelectionResult = {
-            selectedResumeId: bestMatch.id,
+            selectedProfileName: bestMatch.name,
             matchScore: highestScore,
-            reason: `Highest keyword overlap (${highestScore}) with profile ${bestMatch.type}`
+            reason: `Best match for ${bestCategory.name} role with score ${highestScore}`,
         };
 
         // Audit the selection
@@ -57,38 +76,65 @@ export class ResumeEngine {
             jobId: job.id,
             verdict: 'ACCEPTED',
             details: result,
-            metadata: { resumeName: bestMatch.name }
+            metadata: { profileName: bestMatch.name, category: bestCategory.name },
         });
 
         return result;
     }
 
     /**
-     * Tailors the resume content. 
-     * STRICT RULE: Only reloads/mirrors existing keywords. No fabrication.
+     * Auto-generates a default resume profile based on user's profile data.
+     * Called when user has no resume profiles defined.
+     */
+    public generateDefaultProfile(profile: UserProfile): ResumeProfile {
+        const contact = profile.contact;
+        const experience = profile.experience || [];
+        const skills = profile.skills || [];
+
+        // Build summary from experience
+        let summary = '';
+        if (experience.length > 0) {
+            const latestJob = experience[0];
+            const yearsExp = experience.length * 2; // Rough estimate
+            summary = `${latestJob.title} with ${yearsExp}+ years of experience. `;
+            
+            if (skills.length > 0) {
+                summary += `Skilled in ${skills.slice(0, 5).join(', ')}.`;
+            }
+        } else {
+            summary = 'Professional seeking new opportunities.';
+        }
+
+        // Derive target roles from experience
+        const targetRoles = experience.slice(0, 3).map(exp => exp.title);
+
+        return {
+            name: 'default',
+            summary,
+            targetRoles: targetRoles.length > 0 ? targetRoles : ['Software Engineer'],
+        };
+    }
+
+    /**
+     * @deprecated Use selectResumeProfile() instead
+     * Legacy method for backward compatibility with old code
+     */
+    public selectResume(job: Job): SelectionResult {
+        // Return a default result - this should be migrated to use selectResumeProfile
+        Logger.warn('Using deprecated selectResume() - migrate to selectResumeProfile()');
+        return {
+            selectedProfileName: 'default',
+            matchScore: 0,
+            reason: 'Legacy fallback - no profile context',
+        };
+    }
+
+    /**
+     * @deprecated Legacy method - resume tailoring now happens in generator.ts
      */
     public tailorResume(resumeId: string, job: Job): string {
-        const resume = RESUME_INVENTORY.find(r => r.id === resumeId);
-        if (!resume) throw new Error('Resume not found');
-
-        // Logic to "mirror" keywords would go here.
-        // For now, we simulate safe optimization by ensuring high-priority keywords are present top-of-list if strictly allowed.
-        // Since we cannot "add" tools not listed, we only highlight what exists.
-
-        const tailoredContent = resume.content;
-        // In a real impl, this would rewrite the summary or skills section 
-        // using ONLY the intersection of resume.keywords AND job description words.
-
-        Logger.info(`Tailored resume ${resume.name} for Job #${job.id}`);
-
-        // Log Diff (Simulated)
-        AuditService.log({
-            actionType: 'MATCH', // or separate TAILOR action
-            jobId: job.id,
-            details: { action: 'tailor', originalLength: resume.content.length, newLength: tailoredContent.length }
-        });
-
-        return tailoredContent;
+        Logger.warn('Using deprecated tailorResume() - use ResumeGenerator instead');
+        return '';
     }
 }
 

@@ -1,11 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { UserProfile, ResumeProfile, RESUME_PROFILE_MAX_LENGTH, RESUME_PROFILE_MAX_COUNT, RESUME_PROFILE_NAME_REGEX } from '../types.js';
 import Logger from './logger.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import supabase from './supabase.js';
 
 export interface ProfileValidationError {
     field: string;
@@ -75,47 +70,6 @@ export function validateResumeProfiles(profiles: ResumeProfile[]): ProfileValida
 }
 
 class ProfileService {
-    private profile: UserProfile | null = null;
-    private configPath = path.resolve(__dirname, '../../profile.json');
-
-    constructor() {
-        this.loadProfile();
-    }
-
-    private loadProfile() {
-        try {
-            if (fs.existsSync(this.configPath)) {
-                const rawData = fs.readFileSync(this.configPath, 'utf-8');
-                this.profile = JSON.parse(rawData);
-                Logger.info('UserProfile loaded successfully.');
-            } else {
-                Logger.warn(`Profile configuration not found at ${this.configPath}. Using defaults.`);
-                this.profile = this.getDefaultProfile();
-            }
-        } catch (error) {
-            Logger.error('Failed to load user profile', error);
-            this.profile = this.getDefaultProfile();
-        }
-    }
-
-    public getConfig(): UserProfile {
-        if (!this.profile) {
-            this.loadProfile();
-        }
-        return this.profile!;
-    }
-
-    public saveConfig(newProfile: UserProfile): void {
-        try {
-            fs.writeFileSync(this.configPath, JSON.stringify(newProfile, null, 4));
-            this.profile = newProfile;
-            Logger.info('UserProfile saving successfully.');
-        } catch (error) {
-            Logger.error('Failed to save user profile', error);
-            throw error;
-        }
-    }
-
     private getDefaultProfile(): UserProfile {
         return {
             contact: {
@@ -140,6 +94,86 @@ class ProfileService {
             skills: [],
             resumeProfiles: []
         };
+    }
+
+    /**
+     * Get profile for a user from Supabase
+     */
+    async getProfileByUserId(userId: string): Promise<UserProfile> {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    // No profile found, return default
+                    Logger.warn(`No profile found for user ${userId}, returning default`);
+                    return this.getDefaultProfile();
+                }
+                throw error;
+            }
+
+            // Transform Supabase data to UserProfile
+            const profile: UserProfile = {
+                contact: data.contact || this.getDefaultProfile().contact,
+                experience: data.experience || [],
+                education: data.education || [],
+                skills: data.skills || [],
+                preferences: data.preferences || this.getDefaultProfile().preferences,
+                resumeProfiles: data.resume_profiles || [],
+                lastEditedProfileId: data.last_edited_profile_id,
+            };
+
+            Logger.info(`Profile loaded for user ${userId}`);
+            return profile;
+        } catch (error) {
+            Logger.error(`Failed to get profile for user ${userId}`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save/update profile for a user in Supabase
+     */
+    async saveProfileByUserId(userId: string, profile: UserProfile): Promise<void> {
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .upsert({
+                    user_id: userId,
+                    contact: profile.contact,
+                    experience: profile.experience,
+                    education: profile.education,
+                    skills: profile.skills,
+                    preferences: profile.preferences,
+                    resume_profiles: profile.resumeProfiles,
+                    last_edited_profile_id: profile.lastEditedProfileId,
+                    updated_at: new Date().toISOString(),
+                }, {
+                    onConflict: 'user_id',
+                });
+
+            if (error) {
+                throw error;
+            }
+
+            Logger.info(`Profile saved for user ${userId}`);
+        } catch (error) {
+            Logger.error(`Failed to save profile for user ${userId}`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Reset profile to empty state for a user
+     */
+    async resetProfileByUserId(userId: string): Promise<void> {
+        const emptyProfile = this.getDefaultProfile();
+        await this.saveProfileByUserId(userId, emptyProfile);
+        Logger.info(`Profile reset for user ${userId}`);
     }
 }
 

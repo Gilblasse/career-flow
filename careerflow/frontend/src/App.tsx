@@ -12,6 +12,7 @@ import ResumePage from './components/Resume/ResumePage';
 import ResumeContextPage from './components/Resume/ResumeContextPage';
 import JobBoardPage from './components/JobBoard/JobBoardPage';
 import AutoApplyPage from './components/AutoApply/AutoApplyPage';
+import { AuthPage, useAuth } from './components/Auth';
 import type { ResumeProfile, Experience, UserProfile } from './types';
 import {
     Sheet,
@@ -19,8 +20,8 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
-import { isDevMode, MOCK_PROFILE, simulateDelay, logDevModeStatus } from './utils/devMode';
+import { Menu, Loader2 } from 'lucide-react';
+import { supabase } from './lib/supabase';
 
 // Resume Context data type for navigation
 interface ResumeContextData {
@@ -32,6 +33,7 @@ interface ResumeContextData {
 }
 
 const App: React.FC = () => {
+    const { user, loading: authLoading } = useAuth();
     const [currentView, setCurrentView] = React.useState('dashboard');
     const [resumeContextData, setResumeContextData] = React.useState<ResumeContextData | null>(null);
     const [profileData, setProfileData] = React.useState<UserProfile | null>(null);
@@ -51,38 +53,70 @@ const App: React.FC = () => {
         setIsSidebarCollapsed(prev => !prev);
     }, []);
 
-    // Log dev mode status on mount
-    React.useEffect(() => {
-        logDevModeStatus();
-    }, []);
-
+    // Fetch profile from Supabase when user is authenticated
     const fetchProfileData = React.useCallback(async () => {
+        if (!user) return;
+        
         setIsProfileLoading(true);
         try {
-            // Use mock profile in dev mode
-            if (isDevMode()) {
-                await simulateDelay(300, 600);
-                setProfileData(MOCK_PROFILE);
-                console.log('%c[App] Loaded mock profile data', 'color: #10B981;');
+            // Fetch profile from Supabase
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+
+            if (error) {
+                console.error('[App] Error fetching profile:', error);
                 return;
             }
 
-            // Production: fetch from backend
-            const res = await fetch('http://localhost:3001/api/profile');
-            if (res.ok) {
-                const data = await res.json();
-                setProfileData(data);
+            if (data) {
+                // Transform Supabase profile to UserProfile format
+                const profile: UserProfile = {
+                    contact: data.contact || {},
+                    experience: data.experience || [],
+                    education: data.education || [],
+                    skills: data.skills || [],
+                    preferences: data.preferences || {
+                        remoteOnly: false,
+                        excludedKeywords: [],
+                        maxSeniority: [],
+                        locations: [],
+                    },
+                    resumeProfiles: data.resume_profiles || [],
+                    lastEditedProfileId: data.last_edited_profile_id,
+                };
+                setProfileData(profile);
+                console.log('%c[App] Loaded profile from Supabase', 'color: #10B981;');
             }
         } catch (err) {
             console.error('Failed to load profile:', err);
         } finally {
             setIsProfileLoading(false);
         }
-    }, []);
+    }, [user]);
 
     React.useEffect(() => {
-        fetchProfileData();
-    }, [fetchProfileData]);
+        if (user) {
+            fetchProfileData();
+        } else {
+            setProfileData(null);
+        }
+    }, [user, fetchProfileData]);
+
+    // Show auth page if not authenticated
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    if (!user) {
+        return <AuthPage />;
+    }
 
     // Enhanced navigation handler that can receive data
     const handleNavigate = (view: string, data?: any) => {
@@ -208,7 +242,7 @@ const App: React.FC = () => {
                         <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 lg:gap-[30px]">
                             <div className="flex flex-col gap-6 lg:gap-[30px]">
                                 {/* Left/Main Column */}
-                                <ProfileBanner />
+                                <ProfileBanner profile={profileData} />
                                 <OverviewStats selectedFilter={jobFilter} onFilterChange={setJobFilter} />
                                 <ApplicationActivityChart />
                                 <JobsTable activeFilter={jobFilter} onFilterChange={setJobFilter} />

@@ -1,8 +1,9 @@
 import ApplicationRunner from './modules/submission/runner.js';
 import JobStore from './modules/ingestion/job-store.js';
-import { RESUME_INVENTORY } from './modules/resume/inventory.js';
 import Logger from './services/logger.js';
 import { Job } from './types.js';
+import path from 'path';
+import fs from 'fs';
 
 async function runSubmissionVerification() {
     Logger.info('--- Starting Browser Submission Verification ---');
@@ -14,7 +15,6 @@ async function runSubmissionVerification() {
     if (jobs.length === 0) {
         Logger.info('No pending jobs found in DB from ingestion. Creating a mock job.');
         // Create a mock Greenhouse job for testing (using a real URL if possible or a safe test one)
-        // Figma or similar usually has open roles.
         const mockJob = {
             company: 'Figma',
             title: 'Software Engineer',
@@ -33,18 +33,24 @@ async function runSubmissionVerification() {
             throw new Error('Failed to create mock job');
         }
     } else {
-        job = jobs[0];
+        job = jobs[0]!;
         Logger.info(`Using existing job #${job.id}: ${job.company} - ${job.title}`);
     }
 
-    // 2. Select a Resume (Mock Selection)
-    const resume = RESUME_INVENTORY.find(r => r.id === 'lyra'); // General resume
-    if (!resume) throw new Error('Resume inventory empty');
+    // 2. Create a test resume path (or use an existing one)
+    const testResumePath = path.resolve('temp/test-resume.pdf');
+    
+    // Check if test resume exists, if not skip submission
+    if (!fs.existsSync(testResumePath)) {
+        Logger.warn(`Test resume not found at ${testResumePath}. Skipping actual submission.`);
+        Logger.info('To test submission, place a resume PDF at: temp/test-resume.pdf');
+        return;
+    }
 
     // 3. Run Submission (Dry Run logic in Submitters)
     // Note: ApplicationRunner launches browser headless: false
     try {
-        await ApplicationRunner.submitApplication(job, resume);
+        await ApplicationRunner.submitApplication(job, testResumePath, true);
         Logger.info('Submission flow completed (Dry Run). check screenshots/');
     } catch (error) {
         Logger.error('Submission Verification Failed:', error);

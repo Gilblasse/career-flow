@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import {
     LineChart,
     Line,
@@ -12,24 +12,82 @@ import {
     Legend,
     ResponsiveContainer,
 } from 'recharts';
+import { useApplicationsRealtime } from '@/lib/realtime';
+import { useAuth } from '@/components/Auth';
 
-// Mock data matching the screenshot curve shapes (Jan 20-31)
-const activityData = [
-    { date: 'Jan 20', applications: 3, responses: 0 },
-    { date: 'Jan 21', applications: 5, responses: 1 },
-    { date: 'Jan 22', applications: 4, responses: 1 },
-    { date: 'Jan 23', applications: 6, responses: 2 },
-    { date: 'Jan 24', applications: 7, responses: 1 },
-    { date: 'Jan 25', applications: 4, responses: 3 },
-    { date: 'Jan 26', applications: 7, responses: 2 },
-    { date: 'Jan 27', applications: 8, responses: 1 },
-    { date: 'Jan 28', applications: 6, responses: 2 },
-    { date: 'Jan 29', applications: 5, responses: 3 },
-    { date: 'Jan 30', applications: 7, responses: 1 },
-    { date: 'Jan 31', applications: 8, responses: 2 },
-];
+interface ChartDataPoint {
+    date: string;
+    applications: number;
+    responses: number;
+}
 
 const ApplicationActivityChart: React.FC = () => {
+    const { user } = useAuth();
+    const { applications } = useApplicationsRealtime(user?.id);
+
+    // Generate chart data from real applications
+    const { chartData, weeklyChange, maxValue } = useMemo(() => {
+        // Get last 12 days for the chart
+        const days: ChartDataPoint[] = [];
+        const today = new Date();
+        
+        for (let i = 11; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            
+            // Count applications created on this date
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(date);
+            dayEnd.setHours(23, 59, 59, 999);
+            
+            const dayApplications = applications.filter(app => {
+                const appDate = new Date(app.created_at);
+                return appDate >= dayStart && appDate <= dayEnd;
+            }).length;
+            
+            // Count completed applications (simulating "responses")
+            const dayResponses = applications.filter(app => {
+                const appDate = new Date(app.completed_at || app.updated_at || app.created_at);
+                return appDate >= dayStart && appDate <= dayEnd && app.queue_status === 'completed';
+            }).length;
+            
+            days.push({
+                date: dateStr,
+                applications: dayApplications,
+                responses: dayResponses,
+            });
+        }
+
+        // Calculate weekly change
+        const thisWeek = days.slice(-7).reduce((sum, d) => sum + d.applications, 0);
+        const lastWeek = days.slice(0, 5).reduce((sum, d) => sum + d.applications, 0);
+        
+        let change = 0;
+        if (lastWeek > 0) {
+            change = Math.round(((thisWeek - lastWeek) / lastWeek) * 100);
+        } else if (thisWeek > 0) {
+            change = 100;
+        }
+
+        // Find max value for Y-axis
+        const max = Math.max(
+            ...days.map(d => Math.max(d.applications, d.responses)),
+            4 // Minimum max value
+        );
+
+        return { chartData: days, weeklyChange: change, maxValue: Math.ceil(max * 1.2) };
+    }, [applications]);
+
+    // Determine trend icon and color
+    const TrendIcon = weeklyChange > 0 ? TrendingUp : weeklyChange < 0 ? TrendingDown : Minus;
+    const trendColor = weeklyChange > 0 
+        ? 'bg-emerald-100 text-emerald-700' 
+        : weeklyChange < 0 
+            ? 'bg-red-100 text-red-700' 
+            : 'bg-gray-100 text-gray-700';
+
     return (
         <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
@@ -40,9 +98,9 @@ const ApplicationActivityChart: React.FC = () => {
                             Applications sent and responses received over time
                         </p>
                     </div>
-                    <Badge className="bg-emerald-100 text-emerald-700 border-0 hover:bg-emerald-100 w-fit flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        +24% this week
+                    <Badge className={`${trendColor} border-0 hover:${trendColor} w-fit flex items-center gap-1`}>
+                        <TrendIcon className="h-3 w-3" />
+                        {weeklyChange >= 0 ? '+' : ''}{weeklyChange}% this week
                     </Badge>
                 </div>
             </CardHeader>
@@ -50,7 +108,7 @@ const ApplicationActivityChart: React.FC = () => {
                 <div className="h-[200px] md:h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart
-                            data={activityData}
+                            data={chartData}
                             margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
                         >
                             <CartesianGrid
@@ -66,7 +124,7 @@ const ApplicationActivityChart: React.FC = () => {
                                 dy={10}
                             />
                             <YAxis
-                                domain={[0, 8]}
+                                domain={[0, maxValue]}
                                 tick={{ fontSize: 12, fill: '#6b7280' }}
                                 tickLine={false}
                                 axisLine={false}

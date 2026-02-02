@@ -35,6 +35,53 @@ export interface Job extends RawJob {
     status: 'pending' | 'analyzed' | 'applied' | 'rejected';
 }
 
+/**
+ * Database row type for the global jobs table (snake_case for Postgres)
+ */
+export interface JobRow {
+    id: string;
+    company: string;
+    title: string;
+    ats_provider: ATSProvider;
+    ats_job_id: string;
+    job_url: string;
+    location: string | null;
+    is_remote: boolean;
+    salary_min: number | null;
+    salary_max: number | null;
+    employment_type: string | null;
+    description: string | null;
+    logo_url: string | null;
+    posted_at: string | null;
+    scraped_at: string;
+    last_seen_at: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+/**
+ * Filters for querying the global jobs table
+ */
+export interface JobFilters {
+    /** Search term for title or company (case-insensitive) */
+    search?: string;
+    /** Filter by location (case-insensitive partial match) */
+    location?: string;
+    /** Filter for remote jobs only */
+    isRemote?: boolean;
+    /** Filter by employment type (full-time, part-time, contract, internship) */
+    employmentType?: string;
+    /** Filter by ATS provider */
+    atsProvider?: ATSProvider;
+    /** Filter by company name (exact match) */
+    company?: string;
+    /** Maximum number of results (default 50) */
+    limit?: number;
+    /** Offset for pagination (default 0) */
+    offset?: number;
+}
+
 export interface Experience {
     id?: string;
     title: string;

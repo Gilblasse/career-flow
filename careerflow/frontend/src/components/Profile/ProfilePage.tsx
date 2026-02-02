@@ -95,7 +95,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
         phone: '',
         website: '',
         bio: '',
-        avatar: 'https://i.pravatar.cc/300?img=11',
+        avatar: '',
         gender: '',
         veteranStatus: '',
         disabilityStatus: '',
@@ -595,7 +595,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                 phone: '',
                 website: '',
                 bio: '',
-                avatar: 'https://i.pravatar.cc/300?img=11',
+                avatar: '',
                 gender: '',
                 veteranStatus: '',
                 disabilityStatus: '',
@@ -1429,8 +1429,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ profileData, isProfileLoading
                     </div>
 
                     <div className="absolute -bottom-7 lg:-bottom-9 left-4 lg:left-6 w-16 lg:w-20 h-16 lg:h-20 rounded-full bg-background p-[3px] shadow-md">
-                        <div className="w-full h-full rounded-full overflow-hidden">
-                            <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+                        <div className="w-full h-full rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                            {user.avatar ? (
+                                <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-lg lg:text-xl font-medium text-muted-foreground">
+                                    {user.firstName && user.lastName 
+                                        ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+                                        : 'U'}
+                                </span>
+                            )}
                         </div>
                     </div>
 

@@ -22,11 +22,16 @@ export function UserAvatar({ src, name, size = 'md', className }: UserAvatarProp
     .toUpperCase()
     .slice(0, 2);
 
+  // Check if className includes rounded-full to override default rounded-xl
+  const hasRoundedFull = className?.includes('rounded-full');
+  const roundedClass = hasRoundedFull ? '' : 'rounded-xl';
+
   if (src) {
     return (
       <div
         className={cn(
-          "rounded-xl bg-muted bg-cover bg-center shrink-0",
+          "bg-muted bg-cover bg-center shrink-0",
+          roundedClass,
           sizeStyles[size],
           className
         )}
@@ -38,7 +43,8 @@ export function UserAvatar({ src, name, size = 'md', className }: UserAvatarProp
   return (
     <div
       className={cn(
-        "rounded-xl bg-muted flex items-center justify-center shrink-0 font-medium text-muted-foreground",
+        "bg-muted flex items-center justify-center shrink-0 font-medium text-muted-foreground",
+        roundedClass,
         sizeStyles[size],
         className
       )}

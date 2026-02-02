@@ -4,14 +4,23 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { UserAvatar, IconButton } from '@/components/shared';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/Auth';
 
 interface HeaderProps {
     onNavigate?: (view: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
+    const { user, signOut } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Get user display name from metadata or email
+    const firstName = user?.user_metadata?.first_name || '';
+    const lastName = user?.user_metadata?.last_name || '';
+    const displayName = firstName && lastName 
+        ? `${firstName} ${lastName.charAt(0)}.`
+        : user?.email?.split('@')[0] || 'User';
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -31,6 +40,11 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             onNavigate(view);
             setIsMenuOpen(false);
         }
+    };
+
+    const handleSignOut = async () => {
+        setIsMenuOpen(false);
+        await signOut();
     };
 
     return (
@@ -65,12 +79,11 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                     <div className="text-right hidden sm:block">
-                        <div className="font-semibold text-sm">H. Johnson</div>
-                        <div className="text-xs text-muted-foreground">Admin</div>
+                        <div className="font-semibold text-sm">{displayName}</div>
+                        <div className="text-xs text-muted-foreground">{user?.email}</div>
                     </div>
                     <UserAvatar 
-                        src="https://i.pravatar.cc/150?img=11" 
-                        name="H. Johnson"
+                        name={displayName}
                         className={cn(isMenuOpen && "ring-2 ring-primary")}
                     />
 
@@ -99,6 +112,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                                 <Button
                                     variant="ghost"
                                     className="w-full justify-start gap-2.5 font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={handleSignOut}
                                 >
                                     <LogOut className="h-4 w-4" /> Logout
                                 </Button>
